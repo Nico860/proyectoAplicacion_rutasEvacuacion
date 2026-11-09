@@ -4,6 +4,19 @@
  */
 package proyectoaplicacion_rutasevacuacion;
 
+import Clases.Escalera;
+import Clases.Lugar;
+import Clases.Pasillo;
+import Clases.Plano;
+import Clases.Salida;
+import Clases.Salon;
+import Simulaciones.Simulacion;
+import java.io.BufferedReader;
+import java.io.File;
+import java.io.FileReader;
+import java.io.PrintWriter;
+import java.util.ArrayList;
+import javax.swing.JFileChooser;
 import javax.swing.JOptionPane;
 
 /**
@@ -13,6 +26,14 @@ import javax.swing.JOptionPane;
 public class FormEvacuacion extends javax.swing.JFrame {
     
     private static final java.util.logging.Logger logger = java.util.logging.Logger.getLogger(FormEvacuacion.class.getName());
+    
+    //se definen los nombres de los archivos
+    private static final String archivoSimulaciones = "historialSimulaciones.dat";
+    private String archivoPlano;
+    //se definen los objetos y listas de los datos
+    private ArrayList<Simulacion> simulaciones = new ArrayList<>();
+    private Plano planoActual;
+    
 
     /**
      * Creates new form FormEvacuacion
@@ -123,7 +144,8 @@ public class FormEvacuacion extends javax.swing.JFrame {
 
         jPanel1.setBackground(new java.awt.Color(0, 48, 135));
 
-        jTabbedPane1.setBackground(new java.awt.Color(0, 112, 204));
+        jTabbedPane1.setBackground(new java.awt.Color(255, 255, 255));
+        jTabbedPane1.setForeground(new java.awt.Color(0, 112, 204));
         jTabbedPane1.setCursor(new java.awt.Cursor(java.awt.Cursor.HAND_CURSOR));
         jTabbedPane1.setFont(new java.awt.Font("Bahnschrift", 0, 18)); // NOI18N
         jTabbedPane1.setOpaque(true);
@@ -663,15 +685,19 @@ public class FormEvacuacion extends javax.swing.JFrame {
                 .addGroup(jPanel12Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
                     .addComponent(jLabel13)
                     .addComponent(jLabel14))
-                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                .addGroup(jPanel12Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.TRAILING, false)
+                .addGroup(jPanel12Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
                     .addGroup(jPanel12Layout.createSequentialGroup()
-                        .addComponent(jScrollPane4, javax.swing.GroupLayout.PREFERRED_SIZE, 287, javax.swing.GroupLayout.PREFERRED_SIZE)
-                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                        .addGap(299, 299, 299)
                         .addComponent(btnBloquearODesbloquear)
                         .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
                         .addComponent(btnCalcularDijkstra))
-                    .addComponent(jScrollPane3, javax.swing.GroupLayout.PREFERRED_SIZE, 353, javax.swing.GroupLayout.PREFERRED_SIZE))
+                    .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, jPanel12Layout.createSequentialGroup()
+                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                        .addGroup(jPanel12Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                            .addComponent(jScrollPane3, javax.swing.GroupLayout.Alignment.TRAILING, javax.swing.GroupLayout.PREFERRED_SIZE, 353, javax.swing.GroupLayout.PREFERRED_SIZE)
+                            .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, jPanel12Layout.createSequentialGroup()
+                                .addComponent(jScrollPane4, javax.swing.GroupLayout.PREFERRED_SIZE, 287, javax.swing.GroupLayout.PREFERRED_SIZE)
+                                .addGap(66, 66, 66)))))
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
                 .addComponent(btnGuardarSimulacion)
                 .addContainerGap(19, Short.MAX_VALUE))
@@ -1120,14 +1146,24 @@ public class FormEvacuacion extends javax.swing.JFrame {
     }// </editor-fold>//GEN-END:initComponents
 
     private void miCargarPlanoActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_miCargarPlanoActionPerformed
-        // TODO add your handling code here:
-        
+        //para mostrar el jfilechooser
         int resultado = fcAgregarPlano.showOpenDialog(this);
-        
-        if(resultado == javax.swing.JFileChooser.APPROVE_OPTION){
-            java.io.File archivo = fcAgregarPlano.getSelectedFile();
-            JOptionPane.showMessageDialog(this, archivo.getAbsolutePath());
+        //se valida que el usuario selecciono un archivo
+        if(resultado != JFileChooser.APPROVE_OPTION){
+            JOptionPane.showMessageDialog(this, "Seleccione un archivo");
+            return;
         }
+        File archivo = fcAgregarPlano.getSelectedFile();
+            
+        //se valida el formato
+        if(!archivo.getName().toLowerCase().endsWith(".txt")){
+            JOptionPane.showMessageDialog(this, "Error: solo se permiten archivos en formato .txt");
+            return;
+        }
+            
+        //se guarda la ruta del archivo
+        archivoPlano = archivo.getAbsolutePath();
+        cargarPlano(archivo);
     }//GEN-LAST:event_miCargarPlanoActionPerformed
 
     private void miGuardarPlanoActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_miGuardarPlanoActionPerformed
@@ -1138,6 +1174,99 @@ public class FormEvacuacion extends javax.swing.JFrame {
         // TODO add your handling code here:
     }//GEN-LAST:event_btnEliminarTramoActionPerformed
 
+    //###########################Regiones#########################################
+    
+    //#Region cargar y guardar archivos
+    private void cargarPlano(File archivo){
+        //se limpia el plano actual y se crea uno nuevo
+        Plano p = new Plano();
+        int numeroL = 1;
+        
+        //se lee el archivo
+        try (BufferedReader br = new BufferedReader(new FileReader(archivo))){
+            String linea;
+            
+            //se recorre el archivo
+            while ((linea = br.readLine()) != null) { 
+                //lineas vacías o que inician con # se ignoran
+                if(linea.trim().isEmpty() || linea.charAt(0) == '#') continue;
+                
+                //se splitea la linea
+                String[] s = linea.split("\\;");
+                
+                //se valida el formato
+                if(!s[0].equalsIgnoreCase("LUGAR") && !s[0].equalsIgnoreCase("TRAMO"))
+                    throw new Exception("El archivo contiene un tipo desconocido - " 
+                            + s[0]);
+                
+                if(s[0].equalsIgnoreCase("LUGAR")){
+                    cargarObjetoLugar(p,s);
+                }
+                else{
+                    cargarObjetoTramo(p, s);
+                }
+            }
+            
+            //se valida que haiga al menos un lugar de salida en el plano
+            if(!planoTieneTipoDeLugar(p, "Fin"))
+                throw new IllegalArgumentException("El plano no cuenta con ninguna salida");
+            
+            //Se cambia el plano actual por el cargado
+            planoActual = p;
+            
+        } catch (Exception e) {
+            JOptionPane.showMessageDialog(this, "Error: " + e.getMessage() + " -> linea: " + numeroL);
+        }
+    }
+    //EndRegion
+    
+    //#Region cargar objetos en el plano
+    private void cargarObjetoLugar(Plano p, String[] linea){
+        //se valida que aun no este registrado un lugar con el id
+        if((p.buscarLugar(linea[1])) != null){
+            throw new IllegalArgumentException("Identificador de lugar repetido dentro del plano");
+        }
+        
+        //se valida que el tipo de lugar sea valido
+        if(!linea[3].equalsIgnoreCase("SALON") && !linea[3].equalsIgnoreCase("PASILLO") && 
+                !linea[3].equalsIgnoreCase("ESCALERA") && !linea[3].equalsIgnoreCase("SALIDA"))
+            throw new IllegalArgumentException("El tipo de lugar no coincide con ninguno del sistema");
+        
+        //se crea el objeto dependiendo del tipo de lugar y se agrega al plano
+        if(linea[3].equalsIgnoreCase("SALON")){
+            Salon salon = new Salon(linea[1], linea[2]);
+            p.agregarLugar(salon);
+        }
+        else if(linea[3].equalsIgnoreCase("PASILLO")){
+            Pasillo pasillo = new Pasillo(linea[1], linea[2]);
+            p.agregarLugar(pasillo);
+        }
+        else if(linea[3].equalsIgnoreCase("ESCALERA")){
+            Escalera escalera = new Escalera(linea[1], linea[2]);
+            p.agregarLugar(escalera);
+        }
+        else{
+            Salida salida = new Salida(linea[1], linea[2]);
+            p.agregarLugar(salida);
+        }
+    }
+    private void cargarObjetoTramo(Plano p, String[] linea){
+        //se agrega el tramo al plano
+        p.agregarTramo(linea[1], linea[2], Double.parseDouble(linea[3]));
+    }
+    //EndRegion
+    
+    //#Region validaciones
+    private boolean planoTieneTipoDeLugar(Plano p,String tipo){
+        for (Lugar lugar : p.getLugares()) {
+            if(lugar.esTipoDePunto("SALIDA")) return true;
+        }        
+        return false;
+    }
+    //EndRegion
+    
+    //############################################################################
+    
     /**
      * @param args the command line arguments
      */

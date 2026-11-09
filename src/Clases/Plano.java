@@ -36,6 +36,14 @@ public class Plano {
         if (a == null || b == null) {
             throw new IllegalArgumentException("Lugar inexistente: " + idlugarA + " o " + idLugarB);
         }
+        
+        //se valida que aun no exista un tramo con esos lugares
+        for (Tramo tramo : tramos) {
+            if(tramo.tieneLugares(a, b)){
+                throw new IllegalArgumentException("Ya existe un tramo con esos lugares, registre un nuevo tramo");
+            }
+        }
+        
         Tramo tramo = new Tramo(a, b, distancia);
         tramos.add(tramo);
         // Se registra en AMBOS extremos porque el grafo es no dirigido.
