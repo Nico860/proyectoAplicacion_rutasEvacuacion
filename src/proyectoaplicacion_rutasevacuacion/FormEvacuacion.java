@@ -113,6 +113,7 @@ public class FormEvacuacion extends javax.swing.JFrame {
         tblSimulaciones = new javax.swing.JTable();
         jLabel24 = new javax.swing.JLabel();
         btnVerDetalle = new javax.swing.JButton();
+        btnVerReporteDetallado = new javax.swing.JButton();
         jMenuBar1 = new javax.swing.JMenuBar();
         jMenu1 = new javax.swing.JMenu();
         miCargarPlano = new javax.swing.JMenuItem();
@@ -1008,6 +1009,11 @@ public class FormEvacuacion extends javax.swing.JFrame {
         btnVerDetalle.setForeground(new java.awt.Color(108, 108, 108));
         btnVerDetalle.setText("Ver Detalle");
 
+        btnVerReporteDetallado.setBackground(new java.awt.Color(0, 112, 204));
+        btnVerReporteDetallado.setFont(new java.awt.Font("Bahnschrift", 0, 14)); // NOI18N
+        btnVerReporteDetallado.setForeground(new java.awt.Color(255, 255, 255));
+        btnVerReporteDetallado.setText("Ver Reporte Detallado");
+
         javax.swing.GroupLayout jPanel17Layout = new javax.swing.GroupLayout(jPanel17);
         jPanel17.setLayout(jPanel17Layout);
         jPanel17Layout.setHorizontalGroup(
@@ -1019,7 +1025,9 @@ public class FormEvacuacion extends javax.swing.JFrame {
                     .addGroup(jPanel17Layout.createSequentialGroup()
                         .addComponent(jScrollPane8, javax.swing.GroupLayout.PREFERRED_SIZE, 552, javax.swing.GroupLayout.PREFERRED_SIZE)
                         .addGap(30, 30, 30)
-                        .addComponent(btnVerDetalle, javax.swing.GroupLayout.DEFAULT_SIZE, 266, Short.MAX_VALUE)))
+                        .addGroup(jPanel17Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                            .addComponent(btnVerDetalle, javax.swing.GroupLayout.DEFAULT_SIZE, 266, Short.MAX_VALUE)
+                            .addComponent(btnVerReporteDetallado, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))))
                 .addGap(206, 206, 206))
         );
         jPanel17Layout.setVerticalGroup(
@@ -1027,7 +1035,10 @@ public class FormEvacuacion extends javax.swing.JFrame {
             .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, jPanel17Layout.createSequentialGroup()
                 .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
                 .addGroup(jPanel17Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.TRAILING)
-                    .addComponent(btnVerDetalle)
+                    .addGroup(jPanel17Layout.createSequentialGroup()
+                        .addComponent(btnVerReporteDetallado)
+                        .addGap(18, 18, 18)
+                        .addComponent(btnVerDetalle))
                     .addGroup(jPanel17Layout.createSequentialGroup()
                         .addComponent(jLabel24)
                         .addGap(18, 18, 18)
@@ -1166,6 +1177,7 @@ public class FormEvacuacion extends javax.swing.JFrame {
     private javax.swing.JButton btnRegistrarLugar;
     private javax.swing.JButton btnRegistrarTramo;
     private javax.swing.JButton btnVerDetalle;
+    private javax.swing.JButton btnVerReporteDetallado;
     private javax.swing.JComboBox<String> cbDestino;
     private javax.swing.JComboBox<String> cbFiltrarLugar;
     private javax.swing.JComboBox<String> cbFiltrarTipoLugar;
