@@ -1189,7 +1189,10 @@ public class FormEvacuacion extends javax.swing.JFrame {
             //se recorre el archivo
             while ((linea = br.readLine()) != null) { 
                 //lineas vacías o que inician con # se ignoran
-                if(linea.trim().isEmpty() || linea.charAt(0) == '#') continue;
+                if(linea.trim().isEmpty() || linea.charAt(0) == '#'){
+                    numeroL++;
+                    continue;
+                }
                 
                 //se splitea la linea
                 String[] s = linea.split("\\;");
@@ -1205,6 +1208,7 @@ public class FormEvacuacion extends javax.swing.JFrame {
                 else{
                     cargarObjetoTramo(p, s);
                 }
+                numeroL++;
             }
             
             //se valida que haiga al menos un lugar de salida en el plano
@@ -1259,7 +1263,7 @@ public class FormEvacuacion extends javax.swing.JFrame {
     //#Region validaciones
     private boolean planoTieneTipoDeLugar(Plano p,String tipo){
         for (Lugar lugar : p.getLugares()) {
-            if(lugar.esTipoDePunto("SALIDA")) return true;
+            if(lugar.esTipoDePunto(tipo)) return true;
         }        
         return false;
     }
