@@ -20,4 +20,9 @@ public class Escalera extends Lugar{
     public String tipoDePunto() {
         return ("Paso");
     }
+
+    @Override
+    public String tipoLugar() {
+        return "ESCALERA";
+    }
 }

@@ -10,10 +10,14 @@ import Clases.Pasillo;
 import Clases.Plano;
 import Clases.Salida;
 import Clases.Salon;
+import Clases.Tramo;
 import Simulaciones.Simulacion;
 import java.io.BufferedReader;
 import java.io.File;
+import java.io.FileOutputStream;
 import java.io.FileReader;
+import java.io.FileWriter;
+import java.io.ObjectOutputStream;
 import java.io.PrintWriter;
 import java.util.ArrayList;
 import javax.swing.JFileChooser;
@@ -1220,6 +1224,33 @@ public class FormEvacuacion extends javax.swing.JFrame {
             
         } catch (Exception e) {
             JOptionPane.showMessageDialog(this, "Error: " + e.getMessage() + " -> linea: " + numeroL);
+        }
+    }
+    private void guardarPlano(){        
+        //se sobreescribe el archivo
+        try (PrintWriter pw = new PrintWriter(new FileWriter(archivoPlano))){
+            //se recorre la lista de lugares del plano
+            for (Lugar lugar : planoActual.getLugares()) {
+                pw.append(lugar.lineaArchivo());
+            }
+            //se recorre la lista de tramos del plano
+            for (Tramo tramo : planoActual.getTramos()) {
+                pw.append(tramo.lineaArchivo());
+            }
+        } catch (Exception e) {
+            JOptionPane.showMessageDialog(this, "Ocurrio un error al guardar el plano: " + e.getMessage());
+        }
+    }
+    private void cargarHistorial(){
+        File f = new File(archivoSimulaciones);
+        if(!f.exists()){
+            JOptionPane.showMessageDialog(this, "No se ha realizado ninguna simulación");
+            return;
+        }
+        
+        try (ObjectOutputStream os = new ObjectOutputStream(new FileOutputStream(f))){
+            
+        } catch (Exception e) {
         }
     }
     //EndRegion

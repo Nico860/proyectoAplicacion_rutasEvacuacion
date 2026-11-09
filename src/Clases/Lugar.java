@@ -29,8 +29,13 @@ public abstract class Lugar {
         return tipoDePunto().equalsIgnoreCase(tipo); 
     }
     
+    public String lineaArchivo(){
+        return ("LUGAR;"+idLugar+";"+tipoLugar());
+    }
+    
     //metodos abstractos
     public abstract String tipoDePunto();
+    public abstract String tipoLugar();
     
     //getter y setters
     private void setIdLugar(String id){

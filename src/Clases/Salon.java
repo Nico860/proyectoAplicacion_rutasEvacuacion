@@ -20,4 +20,9 @@ public class Salon extends Lugar{
     public String tipoDePunto() {
         return ("Inicio");
     }
+
+    @Override
+    public String tipoLugar() {
+        return "SALON";
+    }
 }

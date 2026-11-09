@@ -25,6 +25,10 @@ public class Tramo {
     }
     
     //metodos
+    public String lineaArchivo(){
+        return ("TRAMO;"+origen.getIdLugar()+";"+destino.getIdLugar()+";"+distancia);
+    }
+    
     public boolean tieneLugares(Lugar a, Lugar b){
         return (origen == a && destino == b) || (origen == b && destino == a);
     }

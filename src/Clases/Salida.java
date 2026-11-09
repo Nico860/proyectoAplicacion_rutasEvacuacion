@@ -8,7 +8,7 @@ package Clases;
  *
  * @author CHAPTOPS TACTIC
  */
-public class Salida extends Salon{
+public class Salida extends Lugar{
     //se define el constructor
     public Salida(String idLugar, String nombre) {
         super(idLugar, nombre);
@@ -19,5 +19,10 @@ public class Salida extends Salon{
     @Override
     public String tipoDePunto() {
         return ("Fin");
+    }
+
+    @Override
+    public String tipoLugar() {
+        return "SALIDA";
     }
 }
