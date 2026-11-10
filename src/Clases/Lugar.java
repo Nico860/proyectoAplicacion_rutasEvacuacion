@@ -4,11 +4,15 @@
  */
 package Clases;
 
+import java.io.Serializable;
+
 /**
  *
  * @author CHAPTOPS TACTIC
  */
-public abstract class Lugar {
+public abstract class Lugar implements Serializable{
+    private static final long serialVersionUID = 1L;
+    
     //se dfinen los atributos
     private String idLugar;
     private String nombre;

@@ -4,11 +4,15 @@
  */
 package Clases;
 
+import java.io.Serializable;
+
 /**
  *
  * @author CHAPTOPS TACTIC
  */
-public class Tramo {
+public class Tramo implements Serializable{
+    private static final long serialVersionUID = 1l;
+    
     //se definen los metodos
     private Lugar origen;
     private Lugar destino;

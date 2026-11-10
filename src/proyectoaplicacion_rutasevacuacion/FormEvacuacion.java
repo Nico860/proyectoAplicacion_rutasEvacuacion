@@ -14,9 +14,12 @@ import Clases.Tramo;
 import Simulaciones.Simulacion;
 import java.io.BufferedReader;
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.FileReader;
 import java.io.FileWriter;
+import java.io.ObjectInput;
+import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.io.PrintWriter;
 import java.util.ArrayList;
@@ -1248,9 +1251,19 @@ public class FormEvacuacion extends javax.swing.JFrame {
             return;
         }
         
-        try (ObjectOutputStream os = new ObjectOutputStream(new FileOutputStream(f))){
-            
+        try (ObjectInputStream ois = new ObjectInputStream(new FileInputStream(f))){
+            //se deserealiza el objeto
+            simulaciones = (ArrayList<Simulacion>) ois.readObject();
         } catch (Exception e) {
+            JOptionPane.showMessageDialog(this, "Ocurrio un error al cargar el archivo");
+        }
+    }
+    private void guardarSimulacion(){
+        //se guarda el archivo de simulaciones
+        try (ObjectOutputStream oop = new ObjectOutputStream(new FileOutputStream(archivoSimulaciones))){
+            oop.writeObject(simulaciones);
+        } catch (Exception e) {
+            JOptionPane.showMessageDialog(this, "Ocurrio un error al guardar el archivo");
         }
     }
     //EndRegion

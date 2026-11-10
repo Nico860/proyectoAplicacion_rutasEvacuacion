@@ -7,6 +7,7 @@ package Simulaciones;
 import Algoritmo_Dijkstra.Ruta;
 import Clases.Lugar;
 import Clases.Tramo;
+import java.io.Serializable;
 import java.time.LocalDateTime;
 import java.util.List;
 
@@ -14,7 +15,9 @@ import java.util.List;
  *
  * @author CHAPTOPS TACTIC
  */
-public class Simulacion implements Reportable{
+public class Simulacion implements Reportable, Serializable{
+    private static final long serialVersionUID = 1L;
+    
     //se definen los atributos
     private LocalDateTime fechaYHora;
     private List<Tramo> tramosBloqueados;

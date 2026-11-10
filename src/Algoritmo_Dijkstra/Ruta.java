@@ -5,13 +5,16 @@
 package Algoritmo_Dijkstra;
 
 import Clases.Lugar;
+import java.io.Serializable;
 import java.util.List;
 
 /**
  *
  * @author CHAPTOPS TACTIC
  */
-public class Ruta {
+public class Ruta implements Serializable{
+    private static final long serialVersionUID = 1L;
+    
     //se definen los metodos
     private final List<Lugar> lugares;
     private final double distancia;
