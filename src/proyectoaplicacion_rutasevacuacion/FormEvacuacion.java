@@ -339,9 +339,9 @@ public class FormEvacuacion extends javax.swing.JFrame {
                         .addComponent(btnRegistrarLugar))
                     .addComponent(jScrollPane1, javax.swing.GroupLayout.PREFERRED_SIZE, 353, javax.swing.GroupLayout.PREFERRED_SIZE))
                 .addGap(18, 18, 18)
-                .addGroup(jPanel9Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
-                    .addComponent(btnEliminarLugar)
-                    .addComponent(btnModificarLugar))
+                .addGroup(jPanel9Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                    .addComponent(btnModificarLugar)
+                    .addComponent(btnEliminarLugar))
                 .addContainerGap(14, Short.MAX_VALUE))
         );
 
@@ -569,9 +569,9 @@ public class FormEvacuacion extends javax.swing.JFrame {
                         .addComponent(btnRegistrarTramo))
                     .addComponent(jScrollPane2, javax.swing.GroupLayout.PREFERRED_SIZE, 353, javax.swing.GroupLayout.PREFERRED_SIZE))
                 .addGap(18, 18, 18)
-                .addGroup(jPanel11Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
-                    .addComponent(btnEliminarTramo)
-                    .addComponent(btnModificarTramo))
+                .addGroup(jPanel11Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                    .addComponent(btnModificarTramo)
+                    .addComponent(btnEliminarTramo))
                 .addContainerGap(14, Short.MAX_VALUE))
         );
 
@@ -1174,7 +1174,8 @@ public class FormEvacuacion extends javax.swing.JFrame {
     }//GEN-LAST:event_miCargarPlanoActionPerformed
 
     private void miGuardarPlanoActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_miGuardarPlanoActionPerformed
-        //logica para guardar el archivo
+        //se guarda el plano
+        guardarPlano();
     }//GEN-LAST:event_miGuardarPlanoActionPerformed
 
     private void btnEliminarTramoActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnEliminarTramoActionPerformed
