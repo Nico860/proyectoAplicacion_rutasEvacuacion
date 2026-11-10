@@ -27,6 +27,7 @@ import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import javax.swing.DefaultComboBoxModel;
+import javax.swing.DefaultListModel;
 import javax.swing.JFileChooser;
 import javax.swing.JOptionPane;
 import javax.swing.table.DefaultTableModel;
@@ -1576,6 +1577,8 @@ public class FormEvacuacion extends javax.swing.JFrame {
     //#Region cargar comboBoxes
     private void cargarComboBoxes(){
         cargarComboBoxesLugar();
+        cargarComboBoxesSalonesOrigen();
+        cargarListaTramos();
     }
     private void cargarComboBoxesLugar(){
         cbOrigen.removeAllItems();
@@ -1591,6 +1594,33 @@ public class FormEvacuacion extends javax.swing.JFrame {
         cbOrigen.setModel(modelo);
         cbDestino.setModel(modelo);
         cbFiltrarLugar.setModel(modelo);
+    }
+    private void cargarComboBoxesSalonesOrigen(){
+        cbSalonOrigen.removeAllItems();
+        //se crean los modelos
+        DefaultComboBoxModel<Lugar> modelo = new DefaultComboBoxModel<>();
+        //se agregan solo los origenes
+        for (Lugar lugar : planoActual.getLugares()) {
+            if(lugar.esTipoDePunto("Inicio")){
+                modelo.addElement(lugar);
+            }
+        }
+        //se pasa el modelo
+        cbSalonOrigen.setModel(modelo);
+    }
+    //EndRegion
+    
+    //#Region cargar listas
+    private void cargarListaTramos(){
+        listaTramos.removeAll();
+        //se crea el modelo
+        DefaultListModel<Tramo> modelo = new DefaultListModel<>();
+        //se agrega cada tramo
+        for (Tramo tramo : planoActual.getTramos()) {
+            modelo.addElement(tramo);
+        }
+        //se pasa el modelo
+        listaTramos.setModel(modelo);
     }
     //EndRegion
     
@@ -1641,7 +1671,7 @@ public class FormEvacuacion extends javax.swing.JFrame {
     private javax.swing.JComboBox<Lugar> cbFiltrarLugar;
     private javax.swing.JComboBox<String> cbFiltrarTipoLugar;
     private javax.swing.JComboBox<Lugar> cbOrigen;
-    private javax.swing.JComboBox<String> cbSalonOrigen;
+    private javax.swing.JComboBox<Lugar> cbSalonOrigen;
     private javax.swing.JComboBox<String> cbTipoLugar;
     private javax.swing.JFileChooser fcAgregarPlano;
     private javax.swing.JLabel jLabel1;
@@ -1694,7 +1724,7 @@ public class FormEvacuacion extends javax.swing.JFrame {
     private javax.swing.JTabbedPane jTabbedPane1;
     private javax.swing.JLabel lblDistanciaTotal;
     private javax.swing.JLabel lblSalidaCercana;
-    private javax.swing.JList<String> listaTramos;
+    private javax.swing.JList<Tramo> listaTramos;
     private javax.swing.JMenuItem miCargarPlano;
     private javax.swing.JMenuItem miGuardarPlano;
     private javax.swing.JPanel pna;
