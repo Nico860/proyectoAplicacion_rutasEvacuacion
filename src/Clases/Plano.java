@@ -56,13 +56,18 @@ public class Plano {
         adyacencia.clear();        
         
         //se reconstruye todo el plano
-        for (Lugar lugar : copiaLugares) {
-            agregarLugar(lugar);
+        reconstuirPlano(copiaLugares, copiaTramos);
+    }
+    
+    public void modificarLugar(String idLugar, String nombreNuevo, int indice){
+        //se valida que exista un lgar con ese id
+        if(!indices.containsKey(idLugar)){
+            throw new IllegalArgumentException("No existe ningun lugare con ese ID");
         }
-        for (Tramo tramo : copiaTramos) {
-            agregarTramo(tramo.getOrigen().getIdLugar(), 
-                    tramo.getDestino().getIdLugar(), tramo.getDistancia());
-        }
+        //se obtiene el objeto
+        Lugar l = getLugar(indice);
+       //se actualiza el nombre
+       l.setNombre(nombreNuevo);
     }
     
     public void agregarTramo(String idlugarA, String idLugarB, double distancia){
@@ -86,6 +91,27 @@ public class Plano {
         adyacencia.get(indiceDe(b)).add(tramo);
     }
     
+    public void eliminarTramo(Tramo tramoEliminar){
+        //se valida que no sea null
+        if(Objects.isNull(tramoEliminar)){
+            return;
+        }
+        
+        //se crean copias 
+        List<Lugar> copiaLugares = new ArrayList<>(this.lugares);
+        List<Tramo> copiaTramos = new ArrayList<>(this.tramos);        
+        //se elimina el tramo de la lista
+        copiaTramos.remove(tramoEliminar);
+        //se vacían las listas originales
+        lugares.clear();
+        tramos.clear();
+        indices.clear();
+        adyacencia.clear();        
+        
+        //se reconstruye todo el plano
+        reconstuirPlano(copiaLugares, copiaTramos);
+    }
+    
     public Lugar buscarLugar(String idLugar){
         Integer i = indices.get(idLugar);
         return i == null ? null : lugares.get(i);
@@ -105,6 +131,17 @@ public class Plano {
     
     public int cantidadLugares(){
         return lugares.size();
+    }
+    
+    private void reconstuirPlano(List<Lugar> lugares, List<Tramo> tramos){
+        //se recorre ambas listas y se van agregando al plano
+        for (Lugar lugar : lugares) {
+            agregarLugar(lugar);
+        }
+        for (Tramo tramo : tramos) {
+            agregarTramo(tramo.getOrigen().getIdLugar(), 
+                    tramo.getDestino().getIdLugar(), tramo.getDistancia());
+        }        
     }
     
     //getters y setters

@@ -73,6 +73,7 @@ public class FormEvacuacion extends javax.swing.JFrame {
         cbFiltrarTipoLugar = new javax.swing.JComboBox<>();
         jLabel2 = new javax.swing.JLabel();
         btnBuscarLugar = new javax.swing.JButton();
+        btnRefrescarTablaLugares = new javax.swing.JButton();
         jPanel9 = new javax.swing.JPanel();
         jScrollPane1 = new javax.swing.JScrollPane();
         tblLugares = new javax.swing.JTable();
@@ -194,22 +195,28 @@ public class FormEvacuacion extends javax.swing.JFrame {
         btnBuscarLugar.setText("Buscar");
         btnBuscarLugar.addActionListener(this::btnBuscarLugarActionPerformed);
 
+        btnRefrescarTablaLugares.setFont(new java.awt.Font("Bahnschrift", 0, 14)); // NOI18N
+        btnRefrescarTablaLugares.setForeground(new java.awt.Color(108, 108, 108));
+        btnRefrescarTablaLugares.setText("Refrescar Tabla");
+        btnRefrescarTablaLugares.addActionListener(this::btnRefrescarTablaLugaresActionPerformed);
+
         javax.swing.GroupLayout jPanel8Layout = new javax.swing.GroupLayout(jPanel8);
         jPanel8.setLayout(jPanel8Layout);
         jPanel8Layout.setHorizontalGroup(
             jPanel8Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
             .addGroup(jPanel8Layout.createSequentialGroup()
                 .addGap(17, 17, 17)
-                .addGroup(jPanel8Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                    .addComponent(btnBuscarLugar, javax.swing.GroupLayout.PREFERRED_SIZE, 306, javax.swing.GroupLayout.PREFERRED_SIZE)
+                .addGroup(jPanel8Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING, false)
                     .addGroup(jPanel8Layout.createSequentialGroup()
-                        .addGroup(jPanel8Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                            .addComponent(jLabel1)
-                            .addComponent(txtBuscarNombreOIdLugar, javax.swing.GroupLayout.PREFERRED_SIZE, 576, javax.swing.GroupLayout.PREFERRED_SIZE))
-                        .addGap(70, 70, 70)
-                        .addGroup(jPanel8Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                            .addComponent(cbFiltrarTipoLugar, javax.swing.GroupLayout.PREFERRED_SIZE, 342, javax.swing.GroupLayout.PREFERRED_SIZE)
-                            .addComponent(jLabel2))))
+                        .addComponent(btnBuscarLugar, javax.swing.GroupLayout.PREFERRED_SIZE, 277, javax.swing.GroupLayout.PREFERRED_SIZE)
+                        .addGap(18, 18, 18)
+                        .addComponent(btnRefrescarTablaLugares, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
+                    .addComponent(jLabel1)
+                    .addComponent(txtBuscarNombreOIdLugar, javax.swing.GroupLayout.PREFERRED_SIZE, 576, javax.swing.GroupLayout.PREFERRED_SIZE))
+                .addGap(70, 70, 70)
+                .addGroup(jPanel8Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                    .addComponent(cbFiltrarTipoLugar, javax.swing.GroupLayout.PREFERRED_SIZE, 342, javax.swing.GroupLayout.PREFERRED_SIZE)
+                    .addComponent(jLabel2))
                 .addContainerGap(89, Short.MAX_VALUE))
         );
         jPanel8Layout.setVerticalGroup(
@@ -224,7 +231,9 @@ public class FormEvacuacion extends javax.swing.JFrame {
                     .addComponent(txtBuscarNombreOIdLugar, javax.swing.GroupLayout.PREFERRED_SIZE, 30, javax.swing.GroupLayout.PREFERRED_SIZE)
                     .addComponent(cbFiltrarTipoLugar, javax.swing.GroupLayout.PREFERRED_SIZE, 30, javax.swing.GroupLayout.PREFERRED_SIZE))
                 .addGap(18, 18, 18)
-                .addComponent(btnBuscarLugar)
+                .addGroup(jPanel8Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
+                    .addComponent(btnBuscarLugar)
+                    .addComponent(btnRefrescarTablaLugares))
                 .addGap(19, 19, 19))
         );
 
@@ -1256,6 +1265,8 @@ public class FormEvacuacion extends javax.swing.JFrame {
                 planoActual.agregarLugar(new Salida(id, nombre));
             }
             
+            //se limpian los campos
+            limpiarCamposLugares();
             //se guarda el archivo
             guardarPlano();
             //se refresca la tabla
@@ -1282,7 +1293,7 @@ public class FormEvacuacion extends javax.swing.JFrame {
             }
             else if(cbFiltrarTipoLugar.getSelectedIndex() > 0){
                 for (Lugar lugar : planoActual.getLugares()) {
-                    if(lugar.esTipoDePunto(tipo)){
+                    if(lugar.esTipoDeLugar(tipo)){
                         filtro.add(lugar);
                     }
                 }
@@ -1291,7 +1302,8 @@ public class FormEvacuacion extends javax.swing.JFrame {
                 JOptionPane.showMessageDialog(this, "Busque por un tipo de filtro valido o llene el campo de busqueda");
                 return;
             }
-            
+            //limpian los campos
+            limpiarCamposLugares();
             //se refresca la vista
             refrescarTablaLugares(filtro);
         } catch (Exception e) {
@@ -1333,8 +1345,38 @@ public class FormEvacuacion extends javax.swing.JFrame {
     }//GEN-LAST:event_btnEliminarLugarActionPerformed
 
     private void btnModificarLugarActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnModificarLugarActionPerformed
-        // TODO add your handling code here:
+        try {
+            //se valida que la fila seleccionada sea valida
+            int filaSeleccionada = tblLugares.getSelectedRow();
+            if(filaSeleccionada < 0){
+                JOptionPane.showMessageDialog(this, "Seleccione una fila de la tabla para eliminar");
+                return;
+            }     
+            
+            //se extrae el objeto
+            Lugar l = planoActual.getLugar(filaSeleccionada);
+            
+            //se extrae el nuevo nombre del campo
+            String nombre = txtNombreLugar.getText();
+            
+            //se actualiza el nombre del lugar
+            planoActual.modificarLugar(l.getIdLugar(), nombre, filaSeleccionada);
+            
+            //se limpian los campos
+            limpiarCamposLugares();
+            //se guarda el archivo
+            guardarPlano();
+            //se refresca la tabla
+            refrescarTablaLugares(planoActual.getLugares());
+        } catch (Exception e) {
+            JOptionPane.showMessageDialog(this, "Ocurrio un error, al modificar el lugar: " + e.getMessage());
+        }
     }//GEN-LAST:event_btnModificarLugarActionPerformed
+
+    private void btnRefrescarTablaLugaresActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnRefrescarTablaLugaresActionPerformed
+        // TODO add your handling code here:
+        refrescarTablaLugares(planoActual.getLugares());
+    }//GEN-LAST:event_btnRefrescarTablaLugaresActionPerformed
 
     //###########################Regiones#########################################
     
@@ -1564,6 +1606,7 @@ public class FormEvacuacion extends javax.swing.JFrame {
     private javax.swing.JButton btnGuardarSimulacion;
     private javax.swing.JButton btnModificarLugar;
     private javax.swing.JButton btnModificarTramo;
+    private javax.swing.JButton btnRefrescarTablaLugares;
     private javax.swing.JButton btnRegistrarLugar;
     private javax.swing.JButton btnRegistrarTramo;
     private javax.swing.JButton btnVerDetalle;
