@@ -302,6 +302,7 @@ public class FormEvacuacion extends javax.swing.JFrame {
         btnModificarLugar.setFont(new java.awt.Font("Bahnschrift", 0, 14)); // NOI18N
         btnModificarLugar.setForeground(new java.awt.Color(108, 108, 108));
         btnModificarLugar.setText("Modificar");
+        btnModificarLugar.addActionListener(this::btnModificarLugarActionPerformed);
 
         javax.swing.GroupLayout jPanel9Layout = new javax.swing.GroupLayout(jPanel9);
         jPanel9.setLayout(jPanel9Layout);
@@ -1330,6 +1331,10 @@ public class FormEvacuacion extends javax.swing.JFrame {
             JOptionPane.showMessageDialog(this, "Ocrurrio un error al eliminar el lugar: " + e.getMessage());
         }
     }//GEN-LAST:event_btnEliminarLugarActionPerformed
+
+    private void btnModificarLugarActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnModificarLugarActionPerformed
+        // TODO add your handling code here:
+    }//GEN-LAST:event_btnModificarLugarActionPerformed
 
     //###########################Regiones#########################################
     

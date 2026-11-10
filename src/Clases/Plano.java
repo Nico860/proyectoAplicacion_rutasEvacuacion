@@ -27,7 +27,9 @@ public class Plano {
             throw new IllegalArgumentException("Id repetido: " + lugar.getIdLugar());
         }
         indices.put(lugar.getIdLugar(), lugares.size());
-        lugares.add(lugar);
+        //si la lsta no contiene ese lugar lo añade 
+        if(!this.lugares.contains(lugar))
+            lugares.add(lugar);
         adyacencia.add(new ArrayList<Tramo>());
     }
     
@@ -37,28 +39,21 @@ public class Plano {
             return;
         }
         
-        //se crean copias de los lugares y tramos
-        List<Tramo> copiaTramos = tramos;
-        List<Lugar> copiaLugares = lugares;
-        //se vacían las listas
-        lugares.clear();
-        tramos.clear();
-        indices.clear();
-        adyacencia.clear();
+        //se crean copias 
+        List<Lugar> copiaLugares = new ArrayList<>(this.lugares);
+        List<Tramo> copiaTramos = new ArrayList<>(this.tramos);
+        //se remueve el lugar de lugares
+        copiaLugares.remove(lugarEliminar);        
         //se elimina cada tramo que tenga ese lugar
         copiaTramos.removeIf(tramo -> 
             tramo.getOrigen().tieneIdLugar(lugarEliminar.getIdLugar()) || 
                 tramo.getDestino().tieneIdLugar(lugarEliminar.getIdLugar())
         );
-        
-        for (Tramo tramo : tramos) {
-            if(tramo.getOrigen().tieneIdLugar(lugarEliminar.getIdLugar()) || 
-                    tramo.getDestino().tieneIdLugar(lugarEliminar.getIdLugar())){
-                tramos.remove(tramo);
-            }
-        }
-        //se remueve el lugar de lugares
-        copiaLugares.remove(lugarEliminar);
+        //se vacían las listas originales
+        lugares.clear();
+        tramos.clear();
+        indices.clear();
+        adyacencia.clear();        
         
         //se reconstruye todo el plano
         for (Lugar lugar : copiaLugares) {
