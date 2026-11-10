@@ -34,7 +34,7 @@ public abstract class Lugar implements Serializable{
     }
     
     public String lineaArchivo(){
-        return ("LUGAR;"+idLugar+";"+tipoLugar());
+        return ("LUGAR;"+idLugar+";"+nombre+";"+tipoLugar());
     }
     
     //metodos abstractos

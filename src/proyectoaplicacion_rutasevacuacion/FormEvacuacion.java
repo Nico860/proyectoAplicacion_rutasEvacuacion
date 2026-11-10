@@ -183,7 +183,7 @@ public class FormEvacuacion extends javax.swing.JFrame {
         cbFiltrarTipoLugar.setBackground(new java.awt.Color(0, 112, 204));
         cbFiltrarTipoLugar.setFont(new java.awt.Font("Bahnschrift", 0, 14)); // NOI18N
         cbFiltrarTipoLugar.setForeground(new java.awt.Color(255, 255, 255));
-        cbFiltrarTipoLugar.setModel(new javax.swing.DefaultComboBoxModel<>(new String[] { "--Seleccione un tipo--", "Salones", "Pasillos", "Escaleras", "Salidas" }));
+        cbFiltrarTipoLugar.setModel(new javax.swing.DefaultComboBoxModel<>(new String[] { "--Seleccione un tipo--", "Salon", "Pasillo", "Escalera", "Salida" }));
 
         jLabel2.setFont(new java.awt.Font("Bahnschrift", 0, 18)); // NOI18N
         jLabel2.setForeground(new java.awt.Color(255, 255, 255));
@@ -192,6 +192,7 @@ public class FormEvacuacion extends javax.swing.JFrame {
         btnBuscarLugar.setFont(new java.awt.Font("Bahnschrift", 0, 14)); // NOI18N
         btnBuscarLugar.setForeground(new java.awt.Color(108, 108, 108));
         btnBuscarLugar.setText("Buscar");
+        btnBuscarLugar.addActionListener(this::btnBuscarLugarActionPerformed);
 
         javax.swing.GroupLayout jPanel8Layout = new javax.swing.GroupLayout(jPanel8);
         jPanel8.setLayout(jPanel8Layout);
@@ -286,15 +287,17 @@ public class FormEvacuacion extends javax.swing.JFrame {
         cbTipoLugar.setBackground(new java.awt.Color(0, 112, 204));
         cbTipoLugar.setFont(new java.awt.Font("Bahnschrift", 0, 14)); // NOI18N
         cbTipoLugar.setForeground(new java.awt.Color(255, 255, 255));
-        cbTipoLugar.setModel(new javax.swing.DefaultComboBoxModel<>(new String[] { "--Seleccione un tipo--", "Salones", "Pasillos", "Escaleras", "Salidas", " " }));
+        cbTipoLugar.setModel(new javax.swing.DefaultComboBoxModel<>(new String[] { "--Seleccione un tipo--", "Salon", "Pasillo", "Escalera", "Salida" }));
 
         btnRegistrarLugar.setFont(new java.awt.Font("Bahnschrift", 0, 14)); // NOI18N
         btnRegistrarLugar.setForeground(new java.awt.Color(108, 108, 108));
         btnRegistrarLugar.setText("Registrar");
+        btnRegistrarLugar.addActionListener(this::btnRegistrarLugarActionPerformed);
 
         btnEliminarLugar.setFont(new java.awt.Font("Bahnschrift", 0, 14)); // NOI18N
         btnEliminarLugar.setForeground(new java.awt.Color(108, 108, 108));
         btnEliminarLugar.setText("Eliminar");
+        btnEliminarLugar.addActionListener(this::btnEliminarLugarActionPerformed);
 
         btnModificarLugar.setFont(new java.awt.Font("Bahnschrift", 0, 14)); // NOI18N
         btnModificarLugar.setForeground(new java.awt.Color(108, 108, 108));
@@ -1219,6 +1222,115 @@ public class FormEvacuacion extends javax.swing.JFrame {
         }  
     }//GEN-LAST:event_btnGuardarSimulacionActionPerformed
 
+    private void btnRegistrarLugarActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnRegistrarLugarActionPerformed
+        try {
+            //se extraen los datos de los campos
+            String id = txtIdLugar.getText();
+            String nombre = txtNombreLugar.getText();
+            
+            //se valida que el tipo seleccionado sea valido
+            if(cbTipoLugar.getSelectedIndex() <= 0){
+                JOptionPane.showMessageDialog(this, "Seleccione un tipo valido");
+                return;
+            }           
+            String tipo = (String) cbTipoLugar.getSelectedItem();
+            
+            //se valida que el id aun no exista
+            if(idLugarYaExiste(id)){
+                JOptionPane.showMessageDialog(this, "Ya existe un lugar con ese ID, ingrese uno nuevo");
+                return;
+            }
+            
+            //se crea el objeto dependiendo del tipo
+            if(tipo.equalsIgnoreCase("Salon")){
+                planoActual.agregarLugar(new Salon(id, nombre));
+            }
+            else if(tipo.equalsIgnoreCase("Pasillo")){
+                planoActual.agregarLugar(new Pasillo(id, nombre));
+            }
+            else if(tipo.equalsIgnoreCase("Escalera")){
+                planoActual.agregarLugar(new Escalera(id, nombre));
+            }
+            else{
+                planoActual.agregarLugar(new Salida(id, nombre));
+            }
+            
+            //se guarda el archivo
+            guardarPlano();
+            //se refresca la tabla
+            refrescarTablaLugares(planoActual.getLugares());
+        } catch (Exception e) {
+            JOptionPane.showMessageDialog(this, "Ocurrio un error, valide los campos: " + e.getMessage());
+        }
+    }//GEN-LAST:event_btnRegistrarLugarActionPerformed
+
+    private void btnBuscarLugarActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnBuscarLugarActionPerformed
+        try {
+            //se extraen los filtros
+            String nombreOId = txtBuscarNombreOIdLugar.getText();
+            String tipo = (String) cbFiltrarTipoLugar.getSelectedItem();
+            
+            List<Lugar> filtro = new ArrayList<>();
+            //se filtran dependiendo del tipo de filtro
+            if(!nombreOId.trim().isEmpty()){
+                for (Lugar lugar : planoActual.getLugares()) {
+                    if(lugar.tieneIdLugar(nombreOId) || lugar.getNombre().equalsIgnoreCase(nombreOId)){
+                        filtro.add(lugar);
+                    }
+                }
+            }
+            else if(cbFiltrarTipoLugar.getSelectedIndex() > 0){
+                for (Lugar lugar : planoActual.getLugares()) {
+                    if(lugar.esTipoDePunto(tipo)){
+                        filtro.add(lugar);
+                    }
+                }
+            }
+            else{
+                JOptionPane.showMessageDialog(this, "Busque por un tipo de filtro valido o llene el campo de busqueda");
+                return;
+            }
+            
+            //se refresca la vista
+            refrescarTablaLugares(filtro);
+        } catch (Exception e) {
+            JOptionPane.showMessageDialog(this, "Ocurrio un error al filtrar los lugares: " + e.getMessage());
+        }
+    }//GEN-LAST:event_btnBuscarLugarActionPerformed
+
+    private void btnEliminarLugarActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnEliminarLugarActionPerformed
+        try {
+            //se valida que la fila seleccionada sea valida
+            int filaSeleccionada = tblLugares.getSelectedRow();
+            if(filaSeleccionada < 0){
+                JOptionPane.showMessageDialog(this, "Seleccione una fila de la tabla para eliminar");
+                return;
+            }
+            
+            //se extrae el objeto
+            Lugar l = planoActual.getLugar(filaSeleccionada);
+            //se le pregunta al usuario si desea continuar
+            int confirmacion = JOptionPane.showConfirmDialog(this, 
+                "¿Está seguro de eliminar al lugar con código " + l.getIdLugar() + 
+                        " se eliminaran los tramos asociados a ese lugar?", 
+                "Confirmar Eliminación", 
+                JOptionPane.YES_NO_OPTION);
+
+            if (confirmacion == JOptionPane.YES_OPTION) {
+                //se elimina del plano
+                planoActual.eliminarLugar(l);
+            }
+            
+            //se guarda el plano
+            guardarPlano();
+            //se refresca la vista
+            refrescarTablaLugares(planoActual.getLugares());
+            refrescarTablaTramos(planoActual.getTramos());
+        } catch (Exception e) {
+            JOptionPane.showMessageDialog(this, "Ocrurrio un error al eliminar el lugar: " + e.getMessage());
+        }
+    }//GEN-LAST:event_btnEliminarLugarActionPerformed
+
     //###########################Regiones#########################################
     
     //#Region cargar y guardar archivos
@@ -1275,11 +1387,11 @@ public class FormEvacuacion extends javax.swing.JFrame {
         try (PrintWriter pw = new PrintWriter(new FileWriter(archivoPlano))){
             //se recorre la lista de lugares del plano
             for (Lugar lugar : planoActual.getLugares()) {
-                pw.append(lugar.lineaArchivo());
+                pw.append(lugar.lineaArchivo()+"\n");
             }
             //se recorre la lista de tramos del plano
             for (Tramo tramo : planoActual.getTramos()) {
-                pw.append(tramo.lineaArchivo());
+                pw.append(tramo.lineaArchivo()+"\n");
             }
         } catch (Exception e) {
             JOptionPane.showMessageDialog(this, "Ocurrio un error al guardar el plano: " + e.getMessage());
@@ -1379,6 +1491,14 @@ public class FormEvacuacion extends javax.swing.JFrame {
         for (Lugar lugar : p.getLugares()) {
             if(lugar.esTipoDePunto(tipo)) return true;
         }        
+        return false;
+    }
+    private boolean idLugarYaExiste(String id){
+        //se recorre la lista y se busca si ya existe
+        for (Lugar lugar : planoActual.getLugares()) {
+            if(lugar.tieneIdLugar(id))
+                return true;
+        }
         return false;
     }
     //EndRegion

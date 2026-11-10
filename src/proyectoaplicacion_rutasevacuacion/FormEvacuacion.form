@@ -280,10 +280,10 @@
                         <Property name="model" type="javax.swing.ComboBoxModel" editor="org.netbeans.modules.form.editors2.ComboBoxModelEditor">
                           <StringArray count="5">
                             <StringItem index="0" value="--Seleccione un tipo--"/>
-                            <StringItem index="1" value="Salones"/>
-                            <StringItem index="2" value="Pasillos"/>
-                            <StringItem index="3" value="Escaleras"/>
-                            <StringItem index="4" value="Salidas"/>
+                            <StringItem index="1" value="Salon"/>
+                            <StringItem index="2" value="Pasillo"/>
+                            <StringItem index="3" value="Escalera"/>
+                            <StringItem index="4" value="Salida"/>
                           </StringArray>
                         </Property>
                       </Properties>
@@ -312,6 +312,9 @@
                         </Property>
                         <Property name="text" type="java.lang.String" value="Buscar"/>
                       </Properties>
+                      <Events>
+                        <EventHandler event="actionPerformed" listener="java.awt.event.ActionListener" parameters="java.awt.event.ActionEvent" handler="btnBuscarLugarActionPerformed"/>
+                      </Events>
                     </Component>
                   </SubComponents>
                 </Container>
@@ -542,13 +545,12 @@
                           <Color blue="ff" green="ff" red="ff" type="rgb"/>
                         </Property>
                         <Property name="model" type="javax.swing.ComboBoxModel" editor="org.netbeans.modules.form.editors2.ComboBoxModelEditor">
-                          <StringArray count="6">
+                          <StringArray count="5">
                             <StringItem index="0" value="--Seleccione un tipo--"/>
-                            <StringItem index="1" value="Salones"/>
-                            <StringItem index="2" value="Pasillos"/>
-                            <StringItem index="3" value="Escaleras"/>
-                            <StringItem index="4" value="Salidas"/>
-                            <StringItem index="5" value=" "/>
+                            <StringItem index="1" value="Salon"/>
+                            <StringItem index="2" value="Pasillo"/>
+                            <StringItem index="3" value="Escalera"/>
+                            <StringItem index="4" value="Salida"/>
                           </StringArray>
                         </Property>
                       </Properties>
@@ -566,6 +568,9 @@
                         </Property>
                         <Property name="text" type="java.lang.String" value="Registrar"/>
                       </Properties>
+                      <Events>
+                        <EventHandler event="actionPerformed" listener="java.awt.event.ActionListener" parameters="java.awt.event.ActionEvent" handler="btnRegistrarLugarActionPerformed"/>
+                      </Events>
                     </Component>
                     <Component class="javax.swing.JButton" name="btnEliminarLugar">
                       <Properties>
@@ -577,6 +582,9 @@
                         </Property>
                         <Property name="text" type="java.lang.String" value="Eliminar"/>
                       </Properties>
+                      <Events>
+                        <EventHandler event="actionPerformed" listener="java.awt.event.ActionListener" parameters="java.awt.event.ActionEvent" handler="btnEliminarLugarActionPerformed"/>
+                      </Events>
                     </Component>
                     <Component class="javax.swing.JButton" name="btnModificarLugar">
                       <Properties>

@@ -8,6 +8,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 
 /**
  *
@@ -28,6 +29,45 @@ public class Plano {
         indices.put(lugar.getIdLugar(), lugares.size());
         lugares.add(lugar);
         adyacencia.add(new ArrayList<Tramo>());
+    }
+    
+    public void eliminarLugar(Lugar lugarEliminar){
+        //se valida que no sea null
+        if(Objects.isNull(lugarEliminar)){
+            return;
+        }
+        
+        //se crean copias de los lugares y tramos
+        List<Tramo> copiaTramos = tramos;
+        List<Lugar> copiaLugares = lugares;
+        //se vacían las listas
+        lugares.clear();
+        tramos.clear();
+        indices.clear();
+        adyacencia.clear();
+        //se elimina cada tramo que tenga ese lugar
+        copiaTramos.removeIf(tramo -> 
+            tramo.getOrigen().tieneIdLugar(lugarEliminar.getIdLugar()) || 
+                tramo.getDestino().tieneIdLugar(lugarEliminar.getIdLugar())
+        );
+        
+        for (Tramo tramo : tramos) {
+            if(tramo.getOrigen().tieneIdLugar(lugarEliminar.getIdLugar()) || 
+                    tramo.getDestino().tieneIdLugar(lugarEliminar.getIdLugar())){
+                tramos.remove(tramo);
+            }
+        }
+        //se remueve el lugar de lugares
+        copiaLugares.remove(lugarEliminar);
+        
+        //se reconstruye todo el plano
+        for (Lugar lugar : copiaLugares) {
+            agregarLugar(lugar);
+        }
+        for (Tramo tramo : copiaTramos) {
+            agregarTramo(tramo.getOrigen().getIdLugar(), 
+                    tramo.getDestino().getIdLugar(), tramo.getDistancia());
+        }
     }
     
     public void agregarTramo(String idlugarA, String idLugarB, double distancia){
