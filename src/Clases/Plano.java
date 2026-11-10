@@ -8,6 +8,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 
 /**
  *
@@ -26,16 +27,63 @@ public class Plano {
             throw new IllegalArgumentException("Id repetido: " + lugar.getIdLugar());
         }
         indices.put(lugar.getIdLugar(), lugares.size());
-        lugares.add(lugar);
-        adyacencia.add(new ArrayList<Tramo>());
+        //si la lsta no contiene ese lugar lo añade 
+        if(!this.lugares.contains(lugar))
+            lugares.add(lugar);
+        adyacencia.add(new ArrayList<Tramo>());;
     }
+    
+    public void eliminarLugar(Lugar lugarEliminar){
+        //se valida que no sea null
+        if(Objects.isNull(lugarEliminar)){
+            return;
+        }
+        
+        //se crean copias 
+        List<Lugar> copiaLugares = new ArrayList<>(this.lugares);
+        List<Tramo> copiaTramos = new ArrayList<>(this.tramos);
+        //se remueve el lugar de lugares
+        copiaLugares.remove(lugarEliminar);        
+        //se elimina cada tramo que tenga ese lugar
+        copiaTramos.removeIf(tramo -> 
+            tramo.getOrigen().tieneIdLugar(lugarEliminar.getIdLugar()) || 
+                tramo.getDestino().tieneIdLugar(lugarEliminar.getIdLugar())
+        );
+        //se vacían las listas originales
+        lugares.clear();
+        tramos.clear();
+        indices.clear();
+        adyacencia.clear();        
+        
+        //se reconstruye todo el plano
+        reconstuirPlano(copiaLugares, copiaTramos);
+    }    
+    
+    public void modificarLugar(String idLugar, String nombreNuevo, int indice){
+        //se valida que exista un lgar con ese id
+        if(!indices.containsKey(idLugar)){
+            throw new IllegalArgumentException("No existe ningun lugare con ese ID");
+        }
+        //se obtiene el objeto
+        Lugar l = getLugar(indice);
+       //se actualiza el nombre
+       l.setNombre(nombreNuevo);
+    }    
     
     public void agregarTramo(String idlugarA, String idLugarB, double distancia){
         Lugar a = buscarLugar(idlugarA);
         Lugar b = buscarLugar(idLugarB);
-        validarExtremos(a, b, null);
+        if (a == null || b == null) {
+            throw new IllegalArgumentException("Lugar inexistente: " + idlugarA + " o " + idLugarB);
+        }
         
-        //el constructor de Tramo valida que la distancia sea mayor que cero
+        //se valida que aun no exista un tramo con esos lugares
+        for (Tramo tramo : tramos) {
+            if(tramo.tieneLugares(a, b)){
+                throw new IllegalArgumentException("Ya existe un tramo con esos lugares, registre un nuevo tramo");
+            }
+        }
+        
         Tramo tramo = new Tramo(a, b, distancia);
         tramos.add(tramo);
         // Se registra en AMBOS extremos porque el grafo es no dirigido.
@@ -51,12 +99,25 @@ public class Plano {
         return null;
     }
     
-    public void eliminarTramo(Tramo tramo){
-        if(!tramos.remove(tramo)){
-            throw new IllegalArgumentException("El tramo no existe en el plano");
+    public void eliminarTramo(Tramo tramoEliminar){
+        //se valida que no sea null
+        if(Objects.isNull(tramoEliminar)){
+            return;
         }
-        adyacencia.get(indiceDe(tramo.getOrigen())).remove(tramo);
-        adyacencia.get(indiceDe(tramo.getDestino())).remove(tramo);
+        
+        //se crean copias 
+        List<Lugar> copiaLugares = new ArrayList<>(this.lugares);
+        List<Tramo> copiaTramos = new ArrayList<>(this.tramos);        
+        //se elimina el tramo de la lista
+        copiaTramos.remove(tramoEliminar);
+        //se vacían las listas originales
+        lugares.clear();
+        tramos.clear();
+        indices.clear();
+        adyacencia.clear();        
+        
+        //se reconstruye todo el plano
+        reconstuirPlano(copiaLugares, copiaTramos);
     }
     
     //Reemplaza un tramo por otro con nuevos extremos y/o distancia, conservando si estaba bloqueado.
@@ -126,6 +187,17 @@ public class Plano {
     public int cantidadLugares(){
         return lugares.size();
     }
+    
+    private void reconstuirPlano(List<Lugar> lugares, List<Tramo> tramos){
+        //se recorre ambas listas y se van agregando al plano
+        for (Lugar lugar : lugares) {
+            agregarLugar(lugar);
+        }
+        for (Tramo tramo : tramos) {
+            agregarTramo(tramo.getOrigen().getIdLugar(), 
+                    tramo.getDestino().getIdLugar(), tramo.getDistancia());
+        }        
+    }    
     
     //getters y setters
 
