@@ -4,6 +4,7 @@
  */
 package proyectoaplicacion_rutasevacuacion;
 
+import Algoritmo_Dijkstra.Ruta;
 import Clases.Escalera;
 import Clases.Lugar;
 import Clases.Pasillo;
@@ -22,9 +23,12 @@ import java.io.ObjectInput;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.io.PrintWriter;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.List;
 import javax.swing.JFileChooser;
 import javax.swing.JOptionPane;
+import javax.swing.table.DefaultTableModel;
 
 /**
  *
@@ -40,7 +44,8 @@ public class FormEvacuacion extends javax.swing.JFrame {
     //se definen los objetos y listas de los datos
     private ArrayList<Simulacion> simulaciones = new ArrayList<>();
     private Plano planoActual;
-    
+    private ArrayList<Ruta> rutas = new ArrayList<>();
+    private ArrayList<Double> distancias = new ArrayList<>();
 
     /**
      * Creates new form FormEvacuacion
@@ -644,6 +649,7 @@ public class FormEvacuacion extends javax.swing.JFrame {
         btnGuardarSimulacion.setFont(new java.awt.Font("Bahnschrift", 0, 14)); // NOI18N
         btnGuardarSimulacion.setForeground(new java.awt.Color(108, 108, 108));
         btnGuardarSimulacion.setText("Guardar simulación");
+        btnGuardarSimulacion.addActionListener(this::btnGuardarSimulacionActionPerformed);
 
         listaTramos.setFont(new java.awt.Font("Bahnschrift", 0, 14)); // NOI18N
         listaTramos.setForeground(new java.awt.Color(173, 173, 173));
@@ -1182,6 +1188,37 @@ public class FormEvacuacion extends javax.swing.JFrame {
         // TODO add your handling code here:
     }//GEN-LAST:event_btnEliminarTramoActionPerformed
 
+    private void btnGuardarSimulacionActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnGuardarSimulacionActionPerformed
+        try {
+            //se obtiene la fecha y hora actuales
+            LocalDateTime fh = LocalDateTime.now(); 
+            
+            //se filtran los datos para la simulación
+            List<Tramo> tramosBloqueados = new ArrayList<>();
+            for (Tramo tramo : planoActual.getTramos()) {
+                if(!tramo.isHabilitada()){
+                    tramosBloqueados.add(tramo);
+                }
+            }
+            List<Lugar> salones = new ArrayList<>();
+            List<Lugar> salidas = new ArrayList<>();
+            for (Lugar lugar : planoActual.getLugares()) {
+                if(lugar.esTipoDePunto("Inicio")){
+                    salones.add(lugar);
+                }
+                if(lugar.esTipoDePunto("Fin")){
+                    salidas.add(lugar);
+                }
+            }
+            
+            //se crea el objeto y se guarda la simulación
+            simulaciones.add(new Simulacion(fh, tramosBloqueados, salones, salidas, rutas, distancias));
+            guardarSimulacion();
+        } catch (Exception e) {
+            JOptionPane.showMessageDialog(this, "Ocurrio un error al guardar la simulación");
+        }  
+    }//GEN-LAST:event_btnGuardarSimulacionActionPerformed
+
     //###########################Regiones#########################################
     
     //#Region cargar y guardar archivos
@@ -1229,6 +1266,9 @@ public class FormEvacuacion extends javax.swing.JFrame {
         } catch (Exception e) {
             JOptionPane.showMessageDialog(this, "Error: " + e.getMessage() + " -> linea: " + numeroL);
         }
+        
+        refrescarTablaLugares(planoActual.getLugares());
+        refrescarTablaTramos(planoActual.getTramos());
     }
     private void guardarPlano(){        
         //se sobreescribe el archivo
@@ -1266,6 +1306,35 @@ public class FormEvacuacion extends javax.swing.JFrame {
         } catch (Exception e) {
             JOptionPane.showMessageDialog(this, "Ocurrio un error al guardar el archivo");
         }
+    }
+    //EndRegion
+    
+    //#Region refrescar tablas
+    private void refrescarTablaLugares(List<Lugar> lugares){
+        //se extrae el modelo
+        DefaultTableModel modelo = (DefaultTableModel) tblLugares.getModel();
+        modelo.setRowCount(0);//se vacía
+        //se recorre la lista de lugares y se agrega cada elmento
+        for (Lugar lugar : lugares) {
+            modelo.addRow(new Object[]{
+                lugar.getIdLugar(), //id
+                lugar.getNombre(), //nombre
+                lugar.tipoDePunto() //tipo
+            });
+        }
+    }
+    private void refrescarTablaTramos(List<Tramo> tramos){
+        //se extrae el modelo
+        DefaultTableModel modelo = (DefaultTableModel) tblTramos.getModel();
+        modelo.setRowCount(0);//se vacía
+        //se recorre la lista de lugares y se agrega cada elmento
+        for (Tramo tramo : tramos) {
+            modelo.addRow(new Object[]{
+                tramo.getOrigen().getIdLugar(), //origen
+                tramo.getDestino().getIdLugar(), //destino
+                tramo.getDistancia() //distancia
+            });
+        }        
     }
     //EndRegion
     
@@ -1311,6 +1380,24 @@ public class FormEvacuacion extends javax.swing.JFrame {
             if(lugar.esTipoDePunto(tipo)) return true;
         }        
         return false;
+    }
+    //EndRegion
+    
+    //#Region limpiar campos
+    private void limpiarCamposLugares(){
+        txtBuscarNombreOIdLugar.setText("");
+        cbFiltrarTipoLugar.setSelectedIndex(0);
+        txtIdLugar.setText("");
+        txtNombreLugar.setText("");
+        cbTipoLugar.setSelectedIndex(0);
+    }
+    private void limpiarCamposTramos(){
+        cbFiltrarLugar.setSelectedIndex(0);
+        txtDesdeDistancia.setText("");
+        txtHastaDistancia.setText("");
+        cbOrigen.setSelectedIndex(0);
+        cbDestino.setSelectedIndex(0);
+        txtDistancia.setText("");
     }
     //EndRegion
     
