@@ -4,7 +4,10 @@
  */
 package proyectoaplicacion_rutasevacuacion;
 
+import Algoritmo_Dijkstra.Dijkstra;
+import Algoritmo_Dijkstra.ResultadoDijkstra;
 import Algoritmo_Dijkstra.Ruta;
+import Algoritmo_Floyd.FloydWarshall;
 import Clases.Escalera;
 import Clases.Lugar;
 import Clases.Pasillo;
@@ -26,10 +29,18 @@ import java.io.PrintWriter;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
+import java.awt.Color;
+import java.awt.Component;
+import java.awt.Font;
 import javax.swing.DefaultComboBoxModel;
 import javax.swing.DefaultListModel;
+import javax.swing.JComboBox;
 import javax.swing.JFileChooser;
 import javax.swing.JOptionPane;
+import javax.swing.JTable;
+import javax.swing.ListSelectionModel;
+import javax.swing.SwingConstants;
+import javax.swing.table.DefaultTableCellRenderer;
 import javax.swing.table.DefaultTableModel;
 
 /**
@@ -48,15 +59,21 @@ public class FormEvacuacion extends javax.swing.JFrame {
     private Plano planoActual;
     private ArrayList<Ruta> rutas = new ArrayList<>();
     private ArrayList<Double> distancias = new ArrayList<>();
+    
+    //datos de apoyo para las tablas (RF-02, RF-05, RF-09)
+    private List<Tramo> tramosMostrados = new ArrayList<>(); //tramos que se ven en tblTramos (fila = posición)
+    private List<Lugar> salonesCombo = new ArrayList<>(); //salones de cbSalonOrigen (posición + 1)
+    private List<Lugar> planSalones = new ArrayList<>(); //salón de cada fila del plan de evacuación
+    private List<Lugar> planSalidas = new ArrayList<>(); //salida asignada a cada salón (null si no hay)
+    private Tramo[][] tramosMatriz; //matriz de adyacencia actual, la usa el renderer para marcar bloqueados
+    private boolean actualizandoUI = false; //evita que los listeners reaccionen mientras se refrescan las tablas
 
     /**
      * Creates new form FormEvacuacion
      */
     public FormEvacuacion() {
         initComponents();
-        //se carga la simulación al iniciar
-        cargarHistorial();
-        txtDetalleEvacuación.setEditable(false);
+        configurarComponentes();
     }
 
     /**
@@ -78,7 +95,6 @@ public class FormEvacuacion extends javax.swing.JFrame {
         cbFiltrarTipoLugar = new javax.swing.JComboBox<>();
         jLabel2 = new javax.swing.JLabel();
         btnBuscarLugar = new javax.swing.JButton();
-        btnRefrescarTablaLugares = new javax.swing.JButton();
         jPanel9 = new javax.swing.JPanel();
         jScrollPane1 = new javax.swing.JScrollPane();
         tblLugares = new javax.swing.JTable();
@@ -144,14 +160,15 @@ public class FormEvacuacion extends javax.swing.JFrame {
         tblAdyacencia = new javax.swing.JTable();
         jPanel7 = new javax.swing.JPanel();
         jPanel16 = new javax.swing.JPanel();
-        jLabel23 = new javax.swing.JLabel();
         jScrollPane7 = new javax.swing.JScrollPane();
-        txtDetalleEvacuación = new javax.swing.JTextArea();
+        tblDetalleEvacuacion = new javax.swing.JTable();
+        jLabel23 = new javax.swing.JLabel();
         jPanel17 = new javax.swing.JPanel();
         jScrollPane8 = new javax.swing.JScrollPane();
         tblSimulaciones = new javax.swing.JTable();
         jLabel24 = new javax.swing.JLabel();
         btnVerDetalle = new javax.swing.JButton();
+        btnVerReporteDetallado = new javax.swing.JButton();
         jMenuBar1 = new javax.swing.JMenuBar();
         jMenu1 = new javax.swing.JMenu();
         miCargarPlano = new javax.swing.JMenuItem();
@@ -188,7 +205,7 @@ public class FormEvacuacion extends javax.swing.JFrame {
         cbFiltrarTipoLugar.setBackground(new java.awt.Color(0, 112, 204));
         cbFiltrarTipoLugar.setFont(new java.awt.Font("Bahnschrift", 0, 14)); // NOI18N
         cbFiltrarTipoLugar.setForeground(new java.awt.Color(255, 255, 255));
-        cbFiltrarTipoLugar.setModel(new javax.swing.DefaultComboBoxModel<>(new String[] { "--Seleccione un tipo--", "Salon", "Pasillo", "Escalera", "Salida" }));
+        cbFiltrarTipoLugar.setModel(new javax.swing.DefaultComboBoxModel<>(new String[] { "--Seleccione un tipo--", "Salones", "Pasillos", "Escaleras", "Salidas" }));
 
         jLabel2.setFont(new java.awt.Font("Bahnschrift", 0, 18)); // NOI18N
         jLabel2.setForeground(new java.awt.Color(255, 255, 255));
@@ -197,12 +214,6 @@ public class FormEvacuacion extends javax.swing.JFrame {
         btnBuscarLugar.setFont(new java.awt.Font("Bahnschrift", 0, 14)); // NOI18N
         btnBuscarLugar.setForeground(new java.awt.Color(108, 108, 108));
         btnBuscarLugar.setText("Buscar");
-        btnBuscarLugar.addActionListener(this::btnBuscarLugarActionPerformed);
-
-        btnRefrescarTablaLugares.setFont(new java.awt.Font("Bahnschrift", 0, 14)); // NOI18N
-        btnRefrescarTablaLugares.setForeground(new java.awt.Color(108, 108, 108));
-        btnRefrescarTablaLugares.setText("Refrescar Tabla");
-        btnRefrescarTablaLugares.addActionListener(this::btnRefrescarTablaLugaresActionPerformed);
 
         javax.swing.GroupLayout jPanel8Layout = new javax.swing.GroupLayout(jPanel8);
         jPanel8.setLayout(jPanel8Layout);
@@ -210,17 +221,16 @@ public class FormEvacuacion extends javax.swing.JFrame {
             jPanel8Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
             .addGroup(jPanel8Layout.createSequentialGroup()
                 .addGap(17, 17, 17)
-                .addGroup(jPanel8Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING, false)
-                    .addGroup(jPanel8Layout.createSequentialGroup()
-                        .addComponent(btnBuscarLugar, javax.swing.GroupLayout.PREFERRED_SIZE, 277, javax.swing.GroupLayout.PREFERRED_SIZE)
-                        .addGap(18, 18, 18)
-                        .addComponent(btnRefrescarTablaLugares, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
-                    .addComponent(jLabel1)
-                    .addComponent(txtBuscarNombreOIdLugar, javax.swing.GroupLayout.PREFERRED_SIZE, 576, javax.swing.GroupLayout.PREFERRED_SIZE))
-                .addGap(70, 70, 70)
                 .addGroup(jPanel8Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                    .addComponent(cbFiltrarTipoLugar, javax.swing.GroupLayout.PREFERRED_SIZE, 342, javax.swing.GroupLayout.PREFERRED_SIZE)
-                    .addComponent(jLabel2))
+                    .addComponent(btnBuscarLugar, javax.swing.GroupLayout.PREFERRED_SIZE, 306, javax.swing.GroupLayout.PREFERRED_SIZE)
+                    .addGroup(jPanel8Layout.createSequentialGroup()
+                        .addGroup(jPanel8Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                            .addComponent(jLabel1)
+                            .addComponent(txtBuscarNombreOIdLugar, javax.swing.GroupLayout.PREFERRED_SIZE, 576, javax.swing.GroupLayout.PREFERRED_SIZE))
+                        .addGap(70, 70, 70)
+                        .addGroup(jPanel8Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                            .addComponent(cbFiltrarTipoLugar, javax.swing.GroupLayout.PREFERRED_SIZE, 342, javax.swing.GroupLayout.PREFERRED_SIZE)
+                            .addComponent(jLabel2))))
                 .addContainerGap(89, Short.MAX_VALUE))
         );
         jPanel8Layout.setVerticalGroup(
@@ -235,9 +245,7 @@ public class FormEvacuacion extends javax.swing.JFrame {
                     .addComponent(txtBuscarNombreOIdLugar, javax.swing.GroupLayout.PREFERRED_SIZE, 30, javax.swing.GroupLayout.PREFERRED_SIZE)
                     .addComponent(cbFiltrarTipoLugar, javax.swing.GroupLayout.PREFERRED_SIZE, 30, javax.swing.GroupLayout.PREFERRED_SIZE))
                 .addGap(18, 18, 18)
-                .addGroup(jPanel8Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
-                    .addComponent(btnBuscarLugar)
-                    .addComponent(btnRefrescarTablaLugares))
+                .addComponent(btnBuscarLugar)
                 .addGap(19, 19, 19))
         );
 
@@ -300,22 +308,19 @@ public class FormEvacuacion extends javax.swing.JFrame {
         cbTipoLugar.setBackground(new java.awt.Color(0, 112, 204));
         cbTipoLugar.setFont(new java.awt.Font("Bahnschrift", 0, 14)); // NOI18N
         cbTipoLugar.setForeground(new java.awt.Color(255, 255, 255));
-        cbTipoLugar.setModel(new javax.swing.DefaultComboBoxModel<>(new String[] { "--Seleccione un tipo--", "Salon", "Pasillo", "Escalera", "Salida" }));
+        cbTipoLugar.setModel(new javax.swing.DefaultComboBoxModel<>(new String[] { "--Seleccione un tipo--", "Salones", "Pasillos", "Escaleras", "Salidas", " " }));
 
         btnRegistrarLugar.setFont(new java.awt.Font("Bahnschrift", 0, 14)); // NOI18N
         btnRegistrarLugar.setForeground(new java.awt.Color(108, 108, 108));
         btnRegistrarLugar.setText("Registrar");
-        btnRegistrarLugar.addActionListener(this::btnRegistrarLugarActionPerformed);
 
         btnEliminarLugar.setFont(new java.awt.Font("Bahnschrift", 0, 14)); // NOI18N
         btnEliminarLugar.setForeground(new java.awt.Color(108, 108, 108));
         btnEliminarLugar.setText("Eliminar");
-        btnEliminarLugar.addActionListener(this::btnEliminarLugarActionPerformed);
 
         btnModificarLugar.setFont(new java.awt.Font("Bahnschrift", 0, 14)); // NOI18N
         btnModificarLugar.setForeground(new java.awt.Color(108, 108, 108));
         btnModificarLugar.setText("Modificar");
-        btnModificarLugar.addActionListener(this::btnModificarLugarActionPerformed);
 
         javax.swing.GroupLayout jPanel9Layout = new javax.swing.GroupLayout(jPanel9);
         jPanel9.setLayout(jPanel9Layout);
@@ -525,6 +530,7 @@ public class FormEvacuacion extends javax.swing.JFrame {
         btnRegistrarTramo.setFont(new java.awt.Font("Bahnschrift", 0, 14)); // NOI18N
         btnRegistrarTramo.setForeground(new java.awt.Color(108, 108, 108));
         btnRegistrarTramo.setText("Registrar");
+        btnRegistrarTramo.addActionListener(this::btnRegistrarTramoActionPerformed);
 
         btnEliminarTramo.setFont(new java.awt.Font("Bahnschrift", 0, 14)); // NOI18N
         btnEliminarTramo.setForeground(new java.awt.Color(108, 108, 108));
@@ -979,14 +985,34 @@ public class FormEvacuacion extends javax.swing.JFrame {
         jPanel16.setBackground(new java.awt.Color(0, 48, 135));
         jPanel16.setBorder(javax.swing.BorderFactory.createLineBorder(new java.awt.Color(242, 242, 242)));
 
+        tblDetalleEvacuacion.setFont(new java.awt.Font("Bahnschrift", 0, 14)); // NOI18N
+        tblDetalleEvacuacion.setForeground(new java.awt.Color(108, 108, 108));
+        tblDetalleEvacuacion.setModel(new javax.swing.table.DefaultTableModel(
+            new Object [][] {
+                {null, null, null, null, null},
+                {null, null, null, null, null},
+                {null, null, null, null, null},
+                {null, null, null, null, null}
+            },
+            new String [] {
+                "TRAMOS BLOQUEADOS", "SALÓN", "SALIDA ASIGNADA", "RUTA", "METROS"
+            }
+        ) {
+            Class[] types = new Class [] {
+                java.lang.String.class, java.lang.String.class, java.lang.String.class, java.lang.String.class, java.lang.Double.class
+            };
+
+            public Class getColumnClass(int columnIndex) {
+                return types [columnIndex];
+            }
+        });
+        tblDetalleEvacuacion.setSelectionBackground(new java.awt.Color(0, 112, 204));
+        tblDetalleEvacuacion.setSelectionForeground(new java.awt.Color(255, 255, 255));
+        jScrollPane7.setViewportView(tblDetalleEvacuacion);
+
         jLabel23.setFont(new java.awt.Font("Bahnschrift", 0, 18)); // NOI18N
         jLabel23.setForeground(new java.awt.Color(255, 255, 255));
         jLabel23.setText("Detalle de Simulación");
-
-        txtDetalleEvacuación.setColumns(20);
-        txtDetalleEvacuación.setFont(new java.awt.Font("Segoe UI", 0, 14)); // NOI18N
-        txtDetalleEvacuación.setRows(5);
-        jScrollPane7.setViewportView(txtDetalleEvacuación);
 
         javax.swing.GroupLayout jPanel16Layout = new javax.swing.GroupLayout(jPanel16);
         jPanel16.setLayout(jPanel16Layout);
@@ -996,7 +1022,7 @@ public class FormEvacuacion extends javax.swing.JFrame {
                 .addGap(28, 28, 28)
                 .addGroup(jPanel16Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
                     .addComponent(jLabel23)
-                    .addComponent(jScrollPane7, javax.swing.GroupLayout.PREFERRED_SIZE, 1020, javax.swing.GroupLayout.PREFERRED_SIZE))
+                    .addComponent(jScrollPane7, javax.swing.GroupLayout.PREFERRED_SIZE, 1038, javax.swing.GroupLayout.PREFERRED_SIZE))
                 .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
         );
         jPanel16Layout.setVerticalGroup(
@@ -1004,9 +1030,9 @@ public class FormEvacuacion extends javax.swing.JFrame {
             .addGroup(jPanel16Layout.createSequentialGroup()
                 .addContainerGap(20, Short.MAX_VALUE)
                 .addComponent(jLabel23)
-                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                .addComponent(jScrollPane7, javax.swing.GroupLayout.PREFERRED_SIZE, 242, javax.swing.GroupLayout.PREFERRED_SIZE)
-                .addContainerGap())
+                .addGap(18, 18, 18)
+                .addComponent(jScrollPane7, javax.swing.GroupLayout.PREFERRED_SIZE, 215, javax.swing.GroupLayout.PREFERRED_SIZE)
+                .addGap(21, 21, 21))
         );
 
         jPanel17.setBackground(new java.awt.Color(0, 48, 135));
@@ -1044,7 +1070,11 @@ public class FormEvacuacion extends javax.swing.JFrame {
         btnVerDetalle.setFont(new java.awt.Font("Bahnschrift", 0, 14)); // NOI18N
         btnVerDetalle.setForeground(new java.awt.Color(108, 108, 108));
         btnVerDetalle.setText("Ver Detalle");
-        btnVerDetalle.addActionListener(this::btnVerDetalleActionPerformed);
+
+        btnVerReporteDetallado.setBackground(new java.awt.Color(0, 112, 204));
+        btnVerReporteDetallado.setFont(new java.awt.Font("Bahnschrift", 0, 14)); // NOI18N
+        btnVerReporteDetallado.setForeground(new java.awt.Color(255, 255, 255));
+        btnVerReporteDetallado.setText("Ver Reporte Detallado");
 
         javax.swing.GroupLayout jPanel17Layout = new javax.swing.GroupLayout(jPanel17);
         jPanel17.setLayout(jPanel17Layout);
@@ -1057,7 +1087,9 @@ public class FormEvacuacion extends javax.swing.JFrame {
                     .addGroup(jPanel17Layout.createSequentialGroup()
                         .addComponent(jScrollPane8, javax.swing.GroupLayout.PREFERRED_SIZE, 552, javax.swing.GroupLayout.PREFERRED_SIZE)
                         .addGap(30, 30, 30)
-                        .addComponent(btnVerDetalle, javax.swing.GroupLayout.DEFAULT_SIZE, 266, Short.MAX_VALUE)))
+                        .addGroup(jPanel17Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                            .addComponent(btnVerDetalle, javax.swing.GroupLayout.DEFAULT_SIZE, 266, Short.MAX_VALUE)
+                            .addComponent(btnVerReporteDetallado, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))))
                 .addGap(206, 206, 206))
         );
         jPanel17Layout.setVerticalGroup(
@@ -1065,7 +1097,10 @@ public class FormEvacuacion extends javax.swing.JFrame {
             .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, jPanel17Layout.createSequentialGroup()
                 .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
                 .addGroup(jPanel17Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.TRAILING)
-                    .addComponent(btnVerDetalle)
+                    .addGroup(jPanel17Layout.createSequentialGroup()
+                        .addComponent(btnVerReporteDetallado)
+                        .addGap(18, 18, 18)
+                        .addComponent(btnVerDetalle))
                     .addGroup(jPanel17Layout.createSequentialGroup()
                         .addComponent(jLabel24)
                         .addGap(18, 18, 18)
@@ -1087,7 +1122,7 @@ public class FormEvacuacion extends javax.swing.JFrame {
         jPanel7Layout.setVerticalGroup(
             jPanel7Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
             .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, jPanel7Layout.createSequentialGroup()
-                .addContainerGap(8, Short.MAX_VALUE)
+                .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
                 .addComponent(jPanel17, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                 .addComponent(jPanel16, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
@@ -1165,7 +1200,6 @@ public class FormEvacuacion extends javax.swing.JFrame {
         //se guarda la ruta del archivo
         archivoPlano = archivo.getAbsolutePath();
         cargarPlano(archivo);
-        cargarComboBoxes();
     }//GEN-LAST:event_miCargarPlanoActionPerformed
 
     private void miGuardarPlanoActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_miGuardarPlanoActionPerformed
@@ -1174,209 +1208,41 @@ public class FormEvacuacion extends javax.swing.JFrame {
     }//GEN-LAST:event_miGuardarPlanoActionPerformed
 
     private void btnEliminarTramoActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnEliminarTramoActionPerformed
-        // TODO add your handling code here:
+        eliminarTramoSeleccionado();
     }//GEN-LAST:event_btnEliminarTramoActionPerformed
 
     private void btnGuardarSimulacionActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnGuardarSimulacionActionPerformed
+        if(!hayPlano()) return;
         try {
             //se obtiene la fecha y hora actuales
             LocalDateTime fh = LocalDateTime.now(); 
             
-            //se filtran los datos para la simulación
+            //se asegura que el plan corresponda al estado actual de los tramos
+            recalcularPlanGeneral();
+            
+            //se guarda una COPIA de los tramos bloqueados: si luego se desbloquean en el plano,
+            //el historial debe seguir mostrando lo que estaba bloqueado en ese momento
             List<Tramo> tramosBloqueados = new ArrayList<>();
             for (Tramo tramo : planoActual.getTramos()) {
                 if(!tramo.isHabilitada()){
-                    tramosBloqueados.add(tramo);
-                }
-            }
-            List<Lugar> salones = new ArrayList<>();
-            List<Lugar> salidas = new ArrayList<>();
-            for (Lugar lugar : planoActual.getLugares()) {
-                if(lugar.esTipoDePunto("Inicio")){
-                    salones.add(lugar);
-                }
-                if(lugar.esTipoDePunto("Fin")){
-                    salidas.add(lugar);
+                    Tramo copia = new Tramo(tramo.getOrigen(), tramo.getDestino(), tramo.getDistancia());
+                    copia.bloquear();
+                    tramosBloqueados.add(copia);
                 }
             }
             
-            //se crea el objeto y se guarda la simulación
-            simulaciones.add(new Simulacion(fh, tramosBloqueados, salones, salidas, rutas, distancias));
+            //se crea el objeto (con copias de las listas) y se guarda la simulación
+            simulaciones.add(new Simulacion(fh, tramosBloqueados, new ArrayList<>(planSalones), 
+                    new ArrayList<>(planSalidas), new ArrayList<>(rutas), new ArrayList<>(distancias)));
             guardarSimulacion();
-            //se refresca la tabla
-            refrescarTablaSimulaciones();
         } catch (Exception e) {
             JOptionPane.showMessageDialog(this, "Ocurrio un error al guardar la simulación");
         }  
     }//GEN-LAST:event_btnGuardarSimulacionActionPerformed
 
-    private void btnRegistrarLugarActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnRegistrarLugarActionPerformed
-        try {
-            //se extraen los datos de los campos
-            String id = txtIdLugar.getText();
-            String nombre = txtNombreLugar.getText();
-            
-            //se valida que el tipo seleccionado sea valido
-            if(cbTipoLugar.getSelectedIndex() <= 0){
-                JOptionPane.showMessageDialog(this, "Seleccione un tipo valido");
-                return;
-            }           
-            String tipo = (String) cbTipoLugar.getSelectedItem();
-            
-            //se valida que el id aun no exista
-            if(idLugarYaExiste(id)){
-                JOptionPane.showMessageDialog(this, "Ya existe un lugar con ese ID, ingrese uno nuevo");
-                return;
-            }
-            
-            //se crea el objeto dependiendo del tipo
-            if(tipo.equalsIgnoreCase("Salon")){
-                planoActual.agregarLugar(new Salon(id, nombre));
-            }
-            else if(tipo.equalsIgnoreCase("Pasillo")){
-                planoActual.agregarLugar(new Pasillo(id, nombre));
-            }
-            else if(tipo.equalsIgnoreCase("Escalera")){
-                planoActual.agregarLugar(new Escalera(id, nombre));
-            }
-            else{
-                planoActual.agregarLugar(new Salida(id, nombre));
-            }
-            
-            //se limpian los campos
-            limpiarCamposLugares();
-            //se guarda el archivo
-            guardarPlano();
-            cargarComboBoxes();
-            //se refresca la tabla
-            refrescarTablaLugares(planoActual.getLugares());
-        } catch (Exception e) {
-            JOptionPane.showMessageDialog(this, "Ocurrio un error, valide los campos: " + e.getMessage());
-        }
-    }//GEN-LAST:event_btnRegistrarLugarActionPerformed
-
-    private void btnBuscarLugarActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnBuscarLugarActionPerformed
-        try {
-            //se extraen los filtros
-            String nombreOId = txtBuscarNombreOIdLugar.getText();
-            String tipo = (String) cbFiltrarTipoLugar.getSelectedItem();
-            
-            List<Lugar> filtro = new ArrayList<>();
-            //se filtran dependiendo del tipo de filtro
-            if(!nombreOId.trim().isEmpty()){
-                for (Lugar lugar : planoActual.getLugares()) {
-                    if(lugar.tieneIdLugar(nombreOId) || lugar.getNombre().equalsIgnoreCase(nombreOId)){
-                        filtro.add(lugar);
-                    }
-                }
-            }
-            else if(cbFiltrarTipoLugar.getSelectedIndex() > 0){
-                for (Lugar lugar : planoActual.getLugares()) {
-                    if(lugar.esTipoDeLugar(tipo)){
-                        filtro.add(lugar);
-                    }
-                }
-            }
-            else{
-                JOptionPane.showMessageDialog(this, "Busque por un tipo de filtro valido o llene el campo de busqueda");
-                return;
-            }
-            //limpian los campos
-            limpiarCamposLugares();
-            //se refresca la vista
-            refrescarTablaLugares(filtro);
-        } catch (Exception e) {
-            JOptionPane.showMessageDialog(this, "Ocurrio un error al filtrar los lugares: " + e.getMessage());
-        }
-    }//GEN-LAST:event_btnBuscarLugarActionPerformed
-
-    private void btnEliminarLugarActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnEliminarLugarActionPerformed
-        try {
-            //se valida que la fila seleccionada sea valida
-            int filaSeleccionada = tblLugares.getSelectedRow();
-            if(filaSeleccionada < 0){
-                JOptionPane.showMessageDialog(this, "Seleccione una fila de la tabla para eliminar");
-                return;
-            }
-            
-            //se extrae el objeto
-            Lugar l = planoActual.getLugar(filaSeleccionada);
-            //se le pregunta al usuario si desea continuar
-            int confirmacion = JOptionPane.showConfirmDialog(this, 
-                "¿Está seguro de eliminar al lugar con código " + l.getIdLugar() + 
-                        " se eliminaran los tramos asociados a ese lugar?", 
-                "Confirmar Eliminación", 
-                JOptionPane.YES_NO_OPTION);
-
-            if (confirmacion == JOptionPane.YES_OPTION) {
-                //se elimina del plano
-                planoActual.eliminarLugar(l);
-            }
-            
-            //se guarda el plano
-            guardarPlano();
-            cargarComboBoxes();
-            //se refresca la vista
-            refrescarTablaLugares(planoActual.getLugares());
-            refrescarTablaTramos(planoActual.getTramos());
-        } catch (Exception e) {
-            JOptionPane.showMessageDialog(this, "Ocrurrio un error al eliminar el lugar: " + e.getMessage());
-        }
-    }//GEN-LAST:event_btnEliminarLugarActionPerformed
-
-    private void btnModificarLugarActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnModificarLugarActionPerformed
-        try {
-            //se valida que la fila seleccionada sea valida
-            int filaSeleccionada = tblLugares.getSelectedRow();
-            if(filaSeleccionada < 0){
-                JOptionPane.showMessageDialog(this, "Seleccione una fila de la tabla para eliminar");
-                return;
-            }     
-            
-            //se extrae el objeto
-            Lugar l = planoActual.getLugar(filaSeleccionada);
-            
-            //se extrae el nuevo nombre del campo
-            String nombre = txtNombreLugar.getText();
-            
-            //se actualiza el nombre del lugar
-            planoActual.modificarLugar(l.getIdLugar(), nombre, filaSeleccionada);
-            
-            //se limpian los campos
-            limpiarCamposLugares();
-            //se guarda el archivo
-            guardarPlano();
-            cargarComboBoxes();
-            //se refresca la tabla
-            refrescarTablaLugares(planoActual.getLugares());
-        } catch (Exception e) {
-            JOptionPane.showMessageDialog(this, "Ocurrio un error, al modificar el lugar: " + e.getMessage());
-        }
-    }//GEN-LAST:event_btnModificarLugarActionPerformed
-
-    private void btnRefrescarTablaLugaresActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnRefrescarTablaLugaresActionPerformed
-        // TODO add your handling code here:
-        refrescarTablaLugares(planoActual.getLugares());
-    }//GEN-LAST:event_btnRefrescarTablaLugaresActionPerformed
-
-    private void btnVerDetalleActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnVerDetalleActionPerformed
-        // TODO add your handling code here:
-        try {
-            int filaSeleccionada = tblSimulaciones.getSelectedRow();
-            //se valida que sea una fila valida
-            if(filaSeleccionada < 0){
-                JOptionPane.showMessageDialog(this, "Seleccione una simulación de la tabla");
-                return;
-            }
-            
-            //se extrae la simulación
-            Simulacion simulacion = simulaciones.get(filaSeleccionada);
-            //se muestra el detalle de la simulación
-            txtDetalleEvacuación.setText(simulacion.generarReporteDetallado());
-        } catch (Exception e) {
-            JOptionPane.showMessageDialog(this, "Ocurrio un error al cargar la simulación");
-        }
-    }//GEN-LAST:event_btnVerDetalleActionPerformed
+    private void btnRegistrarTramoActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnRegistrarTramoActionPerformed
+        registrarTramo();
+    }//GEN-LAST:event_btnRegistrarTramoActionPerformed
 
     //###########################Regiones#########################################
     
@@ -1423,22 +1289,29 @@ public class FormEvacuacion extends javax.swing.JFrame {
             planoActual = p;
             
         } catch (Exception e) {
+            //si falla, se conserva el plano que ya estaba cargado
             JOptionPane.showMessageDialog(this, "Error: " + e.getMessage() + " -> linea: " + numeroL);
+            return;
         }
         
         refrescarTablaLugares(planoActual.getLugares());
-        refrescarTablaTramos(planoActual.getTramos());
+        refrescarTodo();
     }
     private void guardarPlano(){        
+        if(!hayPlano()) return;
+        if(archivoPlano == null){
+            JOptionPane.showMessageDialog(this, "Primero cargue un plano desde un archivo .txt");
+            return;
+        }
         //se sobreescribe el archivo
         try (PrintWriter pw = new PrintWriter(new FileWriter(archivoPlano))){
-            //se recorre la lista de lugares del plano
+            //se recorre la lista de lugares del plano (una línea por registro)
             for (Lugar lugar : planoActual.getLugares()) {
-                pw.append(lugar.lineaArchivo()+"\n");
+                pw.println(lugar.lineaArchivo());
             }
             //se recorre la lista de tramos del plano
             for (Tramo tramo : planoActual.getTramos()) {
-                pw.append(tramo.lineaArchivo()+"\n");
+                pw.println(tramo.lineaArchivo());
             }
         } catch (Exception e) {
             JOptionPane.showMessageDialog(this, "Ocurrio un error al guardar el plano: " + e.getMessage());
@@ -1485,27 +1358,19 @@ public class FormEvacuacion extends javax.swing.JFrame {
     private void refrescarTablaTramos(List<Tramo> tramos){
         //se extrae el modelo
         DefaultTableModel modelo = (DefaultTableModel) tblTramos.getModel();
+        actualizandoUI = true;
         modelo.setRowCount(0);//se vacía
-        //se recorre la lista de lugares y se agrega cada elmento
-        for (Tramo tramo : tramos) {
+        tramosMostrados = new ArrayList<>(tramos); //la fila i de la tabla es tramosMostrados.get(i)
+        //se recorre la lista de tramos y se agrega cada elmento
+        for (Tramo tramo : tramosMostrados) {
             modelo.addRow(new Object[]{
                 tramo.getOrigen().getIdLugar(), //origen
                 tramo.getDestino().getIdLugar(), //destino
-                tramo.getDistancia() //distancia
-            });
-        }        
-    }
-    private void refrescarTablaSimulaciones(){
-        //se obtiene el modelo
-        DefaultTableModel modelo = (DefaultTableModel) tblSimulaciones.getModel();
-        modelo.setRowCount(0);
-        //se recorre la lista y se agrega cada simulacion
-        for (Simulacion simulacion : simulaciones) {
-            modelo.addRow(new Object[]{
-                simulacion.getFechaYHora().toLocalDate(), //fecha
-                simulacion.getFechaYHora().toLocalTime() //hora
+                tramo.getDistancia(), //distancia
+                tramo.isHabilitada() ? "Habilitado" : "BLOQUEADO" //estado
             });
         }
+        actualizandoUI = false;
     }
     //EndRegion
     
@@ -1552,14 +1417,6 @@ public class FormEvacuacion extends javax.swing.JFrame {
         }        
         return false;
     }
-    private boolean idLugarYaExiste(String id){
-        //se recorre la lista y se busca si ya existe
-        for (Lugar lugar : planoActual.getLugares()) {
-            if(lugar.tieneIdLugar(id))
-                return true;
-        }
-        return false;
-    }
     //EndRegion
     
     //#Region limpiar campos
@@ -1580,53 +1437,474 @@ public class FormEvacuacion extends javax.swing.JFrame {
     }
     //EndRegion
     
-    //#Region cargar comboBoxes
-    private void cargarComboBoxes(){
-        cargarComboBoxesLugar();
-        cargarComboBoxesSalonesOrigen();
-        cargarListaTramos();
-    }
-    private void cargarComboBoxesLugar(){
-        cbOrigen.removeAllItems();
-        cbDestino.removeAllItems();
-        cbFiltrarLugar.removeAllItems();
-        //se crean los modelos
-        DefaultComboBoxModel<Lugar> modelo = new DefaultComboBoxModel<>();
-        //se recorre la lista y se llenan
-        for (Lugar lugar : planoActual.getLugares()) {
-            modelo.addElement(lugar);
+    //#Region configuración inicial (RF-02, RF-05, RF-09)
+    //Esta lógica va fuera del código generado de NetBeans: los listeners se conectan aquí
+    //para que no se pierdan cuando el editor de formularios regenere initComponents().
+    private void configurarComponentes(){
+        //tablas de solo lectura (el usuario edita con los campos y botones, no dentro de la tabla)
+        tblTramos.setModel(crearModeloSoloLectura("ORIGEN", "DESTINO", "DISTANCIA (m)", "ESTADO"));
+        tblTramos.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
+        tblTramos.setDefaultRenderer(Object.class, new RenderTramos());
+        tblTramos.getSelectionModel().addListSelectionListener(e -> {
+            if(!e.getValueIsAdjusting()) cargarTramoSeleccionado();
+        });
+        tblPlanEvacuacion.setModel(crearModeloSoloLectura("SALÓN", "SALIDA ASIGNADA", "RUTA", "METROS"));
+        tblPlanEvacuacion.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
+        //la columna RUTA necesita más espacio que las demás
+        int[] anchos = {110, 140, 400, 70};
+        for (int c = 0; c < anchos.length; c++) {
+            tblPlanEvacuacion.getColumnModel().getColumn(c).setPreferredWidth(anchos[c]);
         }
-        //se pasa el modelo a los comboBoxes originales
-        cbOrigen.setModel(modelo);
-        cbDestino.setModel(modelo);
-        cbFiltrarLugar.setModel(modelo);
+        tblAdyacencia.setDefaultRenderer(Object.class, new RenderMatriz(true));
+        tblDistanciasFloyd.setDefaultRenderer(Object.class, new RenderMatriz(false));
+        
+        //lista de tramos del panel de rutas (se bloquean / desbloquean desde aquí)
+        listaTramos.setModel(new DefaultListModel<String>());
+        listaTramos.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
+        
+        jLabel15.setText("Matriz de Adyacencia del Plano   ( — = sin conexión · fondo rojo = tramo bloqueado )");
+        lblSalidaCercana.setText("—");
+        lblDistanciaTotal.setText("—");
+        
+        //los combos siempre tienen un primer elemento "seleccione" para que limpiarCamposTramos() funcione
+        refrescarCombosLugares();
+        
+        //botones
+        //btnRegistrarTramo y btnEliminarTramo se conectan desde el editor de formularios (ver sus ...ActionPerformed)
+        btnModificarTramo.addActionListener(e -> modificarTramoSeleccionado());
+        btnBuscarTramo.addActionListener(e -> buscarTramos());
+        btnBloquearODesbloquear.addActionListener(e -> bloquearODesbloquearTramo());
+        btnCalcularDijkstra.addActionListener(e -> calcularRutaIndividual());
+        btnCalcularFlyod.addActionListener(e -> {
+            if(hayPlano()) recalcularFloyd();
+        });
     }
-    private void cargarComboBoxesSalonesOrigen(){
-        cbSalonOrigen.removeAllItems();
-        //se crean los modelos
-        DefaultComboBoxModel<Lugar> modelo = new DefaultComboBoxModel<>();
-        //se agregan solo los origenes
-        for (Lugar lugar : planoActual.getLugares()) {
-            if(lugar.esTipoDePunto("Inicio")){
-                modelo.addElement(lugar);
+    
+    private DefaultTableModel crearModeloSoloLectura(String... columnas){
+        return new DefaultTableModel(new Object[0][0], columnas) {
+            @Override
+            public boolean isCellEditable(int fila, int columna) {
+                return false;
             }
-        }
-        //se pasa el modelo
-        cbSalonOrigen.setModel(modelo);
+        };
     }
     //EndRegion
     
-    //#Region cargar listas
-    private void cargarListaTramos(){
-        listaTramos.removeAll();
-        //se crea el modelo
-        DefaultListModel<Tramo> modelo = new DefaultListModel<>();
-        //se agrega cada tramo
-        for (Tramo tramo : planoActual.getTramos()) {
-            modelo.addElement(tramo);
+    //#Region refrescar toda la vista a partir del plano actual
+    //Se llama cada vez que cambia el plano: cargar, registrar/modificar/eliminar tramos, bloquear/desbloquear.
+    private void refrescarTodo(){
+        refrescarCombosLugares();
+        refrescarTablaTramos(planoActual.getTramos());
+        refrescarListaTramos();
+        refrescarMatrizAdyacencia();
+        recalcularPlanGeneral();
+        recalcularFloyd();
+        mostrarRutaIndividual();
+    }
+    
+    private void refrescarCombosLugares(){
+        //se recuerda el salón seleccionado para no perderlo al refrescar
+        String idSalon = null;
+        int sel = cbSalonOrigen.getSelectedIndex();
+        if(sel > 0 && sel <= salonesCombo.size()) idSalon = salonesCombo.get(sel - 1).getIdLugar();
+        
+        DefaultComboBoxModel<String> origen = new DefaultComboBoxModel<>();
+        DefaultComboBoxModel<String> destino = new DefaultComboBoxModel<>();
+        DefaultComboBoxModel<String> filtro = new DefaultComboBoxModel<>();
+        DefaultComboBoxModel<String> salones = new DefaultComboBoxModel<>();
+        origen.addElement("--Seleccione un lugar--");
+        destino.addElement("--Seleccione un lugar--");
+        filtro.addElement("--Seleccione un lugar--");
+        salones.addElement("--Seleccione un salón--");
+        salonesCombo = new ArrayList<>();
+        
+        if(planoActual != null){
+            //el elemento i + 1 del combo corresponde al lugar i del plano
+            for (Lugar lugar : planoActual.getLugares()) {
+                origen.addElement(lugar.toString());
+                destino.addElement(lugar.toString());
+                filtro.addElement(lugar.toString());
+                if(lugar.esTipoDePunto("Inicio")){
+                    salonesCombo.add(lugar);
+                    salones.addElement(lugar.toString());
+                }
+            }
         }
-        //se pasa el modelo
+        
+        actualizandoUI = true;
+        cbOrigen.setModel(origen);
+        cbDestino.setModel(destino);
+        cbFiltrarLugar.setModel(filtro);
+        cbSalonOrigen.setModel(salones);
+        for (int i = 0; i < salonesCombo.size(); i++) {
+            if(salonesCombo.get(i).getIdLugar().equals(idSalon)) cbSalonOrigen.setSelectedIndex(i + 1);
+        }
+        actualizandoUI = false;
+    }
+    
+    private void refrescarListaTramos(){
+        DefaultListModel<String> modelo = new DefaultListModel<>();
+        for (Tramo tramo : planoActual.getTramos()) {
+            modelo.addElement(tramo.toString()); //los bloqueados muestran [CERRADA]
+        }
         listaTramos.setModel(modelo);
+    }
+    //EndRegion
+    
+    //#Region RF-02 gestión de tramos
+    private void registrarTramo(){
+        if(!hayPlano()) return;
+        try {
+            Lugar a = lugarDelCombo(cbOrigen, "origen");
+            Lugar b = lugarDelCombo(cbDestino, "destino");
+            double metros = leerNumero(txtDistancia.getText(), "La distancia");
+            
+            //Plano valida: lugares existentes, distinto lugar, no repetido (A–B = B–A) y metros > 0
+            planoActual.agregarTramo(a.getIdLugar(), b.getIdLugar(), metros);
+            
+            refrescarTodo();
+            limpiarCamposTramos();
+        } catch (IllegalArgumentException ex) {
+            avisar("Tramo no válido", ex.getMessage());
+        }
+    }
+    
+    private void modificarTramoSeleccionado(){
+        if(!hayPlano()) return;
+        Tramo tramo = tramoSeleccionadoEnTabla();
+        if(tramo == null) return;
+        try {
+            Lugar a = lugarDelCombo(cbOrigen, "origen");
+            Lugar b = lugarDelCombo(cbDestino, "destino");
+            double metros = leerNumero(txtDistancia.getText(), "La distancia");
+            
+            //si algo no es válido el tramo original queda intacto
+            planoActual.modificarTramo(tramo, a.getIdLugar(), b.getIdLugar(), metros);
+            
+            refrescarTodo();
+            limpiarCamposTramos();
+        } catch (IllegalArgumentException ex) {
+            avisar("Tramo no válido", ex.getMessage());
+        }
+    }
+    
+    private void eliminarTramoSeleccionado(){
+        if(!hayPlano()) return;
+        Tramo tramo = tramoSeleccionadoEnTabla();
+        if(tramo == null) return;
+        
+        int r = JOptionPane.showConfirmDialog(this, "¿Eliminar el tramo " + tramo + "?", 
+                "Eliminar tramo", JOptionPane.YES_NO_OPTION);
+        if(r != JOptionPane.YES_OPTION) return;
+        
+        planoActual.eliminarTramo(tramo);
+        refrescarTodo();
+        limpiarCamposTramos();
+    }
+    
+    //consulta: filtra por lugar (en cualquiera de los dos extremos) y/o por rango de distancia
+    private void buscarTramos(){
+        if(!hayPlano()) return;
+        try {
+            Lugar lugar = cbFiltrarLugar.getSelectedIndex() > 0 ? lugarDelCombo(cbFiltrarLugar, "filtro") : null;
+            Double desde = txtDesdeDistancia.getText().trim().isEmpty() ? null : leerNumero(txtDesdeDistancia.getText(), "El valor 'Desde'");
+            Double hasta = txtHastaDistancia.getText().trim().isEmpty() ? null : leerNumero(txtHastaDistancia.getText(), "El valor 'Hasta'");
+            if(desde != null && hasta != null && desde > hasta){
+                throw new IllegalArgumentException("'Desde' no puede ser mayor que 'Hasta'");
+            }
+            
+            List<Tramo> encontrados = new ArrayList<>();
+            for (Tramo tramo : planoActual.getTramos()) {
+                if(lugar != null && tramo.getOrigen() != lugar && tramo.getDestino() != lugar) continue;
+                if(desde != null && tramo.getDistancia() < desde) continue;
+                if(hasta != null && tramo.getDistancia() > hasta) continue;
+                encontrados.add(tramo);
+            }
+            refrescarTablaTramos(encontrados);
+            if(encontrados.isEmpty()){
+                JOptionPane.showMessageDialog(this, "No se encontraron tramos con esos filtros");
+            }
+        } catch (IllegalArgumentException ex) {
+            avisar("Filtro no válido", ex.getMessage());
+        }
+    }
+    
+    //al seleccionar una fila se cargan sus datos en los campos para poder modificarla
+    private void cargarTramoSeleccionado(){
+        if(actualizandoUI || planoActual == null) return;
+        int fila = tblTramos.getSelectedRow();
+        if(fila < 0 || fila >= tramosMostrados.size()) return;
+        Tramo tramo = tramosMostrados.get(fila);
+        cbOrigen.setSelectedIndex(planoActual.indiceDe(tramo.getOrigen()) + 1);
+        cbDestino.setSelectedIndex(planoActual.indiceDe(tramo.getDestino()) + 1);
+        txtDistancia.setText(String.valueOf(tramo.getDistancia()));
+    }
+    
+    private Tramo tramoSeleccionadoEnTabla(){
+        int fila = tblTramos.getSelectedRow();
+        if(fila < 0 || fila >= tramosMostrados.size()){
+            avisar("Seleccione un tramo", "Seleccione un tramo de la tabla");
+            return null;
+        }
+        return tramosMostrados.get(fila);
+    }
+    
+    private Lugar lugarDelCombo(JComboBox<String> combo, String etiqueta){
+        int i = combo.getSelectedIndex();
+        if(i <= 0 || i > planoActual.cantidadLugares()){
+            throw new IllegalArgumentException("Seleccione el lugar de " + etiqueta);
+        }
+        return planoActual.getLugar(i - 1);
+    }
+    
+    //acepta coma o punto decimal
+    private double leerNumero(String texto, String nombreCampo){
+        String t = texto.trim().replace(',', '.');
+        if(t.isEmpty()) throw new IllegalArgumentException(nombreCampo + " no puede estar vacía");
+        try {
+            return Double.parseDouble(t);
+        } catch (NumberFormatException e) {
+            throw new IllegalArgumentException(nombreCampo + " debe ser un número (por ejemplo 12.5)");
+        }
+    }
+    //EndRegion
+    
+    //#Region RF-05 matriz de adyacencia
+    private void refrescarMatrizAdyacencia(){
+        int n = planoActual.cantidadLugares();
+        tramosMatriz = planoActual.matrizAdyacencia();
+        
+        //encabezados: columna de ids a la izquierda + un id por cada lugar
+        String[] columnas = new String[n + 1];
+        columnas[0] = "";
+        for (int j = 0; j < n; j++) {
+            columnas[j + 1] = planoActual.getLugar(j).getIdLugar();
+        }
+        
+        DefaultTableModel modelo = crearModeloSoloLectura(columnas);
+        for (int i = 0; i < n; i++) {
+            Object[] fila = new Object[n + 1];
+            fila[0] = planoActual.getLugar(i).getIdLugar();
+            for (int j = 0; j < n; j++) {
+                Tramo t = tramosMatriz[i][j];
+                if(i == j) fila[j + 1] = "0";
+                else if(t == null) fila[j + 1] = "—"; //no hay conexión
+                else fila[j + 1] = String.format("%.1f", t.getDistancia()) + (t.isHabilitada() ? "" : " (bloq.)");
+            }
+            modelo.addRow(fila);
+        }
+        tblAdyacencia.setModel(modelo);
+        ajustarColumnas(tblAdyacencia);
+    }
+    
+    private void ajustarColumnas(JTable tabla){
+        tabla.setAutoResizeMode(JTable.AUTO_RESIZE_OFF); //con muchos lugares aparece scroll horizontal
+        for (int c = 0; c < tabla.getColumnCount(); c++) {
+            tabla.getColumnModel().getColumn(c).setPreferredWidth(c == 0 ? 90 : 80);
+        }
+    }
+    //EndRegion
+    
+    //#Region RF-09 bloqueo de tramos y recálculo
+    private void bloquearODesbloquearTramo(){
+        if(!hayPlano()) return;
+        int i = listaTramos.getSelectedIndex();
+        if(i < 0 || i >= planoActual.getTramos().size()){
+            avisar("Seleccione un tramo", "Seleccione un tramo de la lista");
+            return;
+        }
+        Tramo tramo = planoActual.getTramos().get(i);
+        if(tramo.isHabilitada()) tramo.bloquear(); else tramo.habilitar();
+        
+        //se recalcula todo: ruta individual, plan general, tabla Floyd (y matriz / tablas de tramos)
+        refrescarTodo();
+        listaTramos.setSelectedIndex(i);
+        
+        //si el bloqueo deja salones atrapados se avisa, porque en una evacuación real es crítico
+        List<String> atrapados = new ArrayList<>();
+        for (int k = 0; k < planSalones.size(); k++) {
+            if(planSalidas.get(k) == null) atrapados.add(planSalones.get(k).getNombre());
+        }
+        if(!tramo.isHabilitada() && !atrapados.isEmpty()){
+            JOptionPane.showMessageDialog(this, "Con este bloqueo los siguientes salones quedan sin salida alcanzable:\n- " 
+                    + String.join("\n- ", atrapados), "Atención", JOptionPane.WARNING_MESSAGE);
+        }
+    }
+    
+    private void calcularRutaIndividual(){
+        if(!hayPlano()) return;
+        if(cbSalonOrigen.getSelectedIndex() <= 0){
+            avisar("Seleccione un salón", "Seleccione el salón de origen");
+            return;
+        }
+        mostrarRutaIndividual();
+    }
+    
+    //Dijkstra desde el salón elegido hacia cada salida; se queda con la más cercana
+    private void mostrarRutaIndividual(){
+        int i = cbSalonOrigen.getSelectedIndex();
+        lblSalidaCercana.setToolTipText(null);
+        if(planoActual == null || i <= 0 || i > salonesCombo.size()){
+            lblSalidaCercana.setText("—");
+            lblDistanciaTotal.setText("—");
+            return;
+        }
+        Lugar salon = salonesCombo.get(i - 1);
+        Evacuacion e = mejorSalida(salon);
+        if(e.salida == null){
+            lblSalidaCercana.setText("Sin salida alcanzable");
+            lblDistanciaTotal.setText("—");
+        } else {
+            lblSalidaCercana.setText(e.salida.getNombre());
+            lblSalidaCercana.setToolTipText(rutaComoTexto(e.ruta));
+            lblDistanciaTotal.setText(String.format("%.1f m", e.ruta.getDistancia()));
+        }
+        //se resalta la fila del salón en el plan general
+        if(i - 1 < tblPlanEvacuacion.getRowCount()){
+            tblPlanEvacuacion.setRowSelectionInterval(i - 1, i - 1);
+        }
+    }
+    
+    //plan general: la mejor salida de TODOS los salones con los tramos habilitados actuales
+    private void recalcularPlanGeneral(){
+        planSalones = new ArrayList<>();
+        planSalidas = new ArrayList<>();
+        rutas.clear();
+        distancias.clear();
+        
+        DefaultTableModel modelo = (DefaultTableModel) tblPlanEvacuacion.getModel();
+        modelo.setRowCount(0);
+        for (Lugar lugar : planoActual.getLugares()) {
+            if(!lugar.esTipoDePunto("Inicio")) continue;
+            Evacuacion e = mejorSalida(lugar);
+            planSalones.add(lugar);
+            planSalidas.add(e.salida);
+            rutas.add(e.ruta);
+            distancias.add(e.ruta.getDistancia());
+            
+            modelo.addRow(new Object[]{
+                lugar.getNombre(),
+                e.salida == null ? "Sin salida alcanzable" : e.salida.getNombre(),
+                rutaComoTexto(e.ruta),
+                e.salida == null ? null : e.ruta.getDistancia()
+            });
+        }
+    }
+    
+    //tabla de distancias mínimas entre todos los lugares (Floyd-Warshall) sin los tramos bloqueados
+    private void recalcularFloyd(){
+        int n = planoActual.cantidadLugares();
+        double[][] dist = new FloydWarshall().calcular(planoActual);
+        
+        String[] columnas = new String[n + 1];
+        columnas[0] = "";
+        for (int j = 0; j < n; j++) {
+            columnas[j + 1] = planoActual.getLugar(j).getIdLugar();
+        }
+        DefaultTableModel modelo = crearModeloSoloLectura(columnas);
+        for (int i = 0; i < n; i++) {
+            Object[] fila = new Object[n + 1];
+            fila[0] = planoActual.getLugar(i).getIdLugar();
+            for (int j = 0; j < n; j++) {
+                fila[j + 1] = Double.isInfinite(dist[i][j]) ? "∞" : String.format("%.1f", dist[i][j]);
+            }
+            modelo.addRow(fila);
+        }
+        tblDistanciasFloyd.setModel(modelo);
+        ajustarColumnas(tblDistanciasFloyd);
+    }
+    
+    //resultado de evacuar un salón: salida elegida (null si no hay) y su ruta
+    private static class Evacuacion {
+        final Lugar salida;
+        final Ruta ruta;
+        Evacuacion(Lugar salida, Ruta ruta) {
+            this.salida = salida;
+            this.ruta = ruta;
+        }
+    }
+    
+    private Evacuacion mejorSalida(Lugar salon){
+        ResultadoDijkstra resultado = new Dijkstra().calcular(planoActual, salon);
+        Evacuacion mejor = new Evacuacion(null, new Ruta(new ArrayList<Lugar>(), Double.POSITIVE_INFINITY));
+        for (Lugar lugar : planoActual.getLugares()) {
+            if(lugar.esTipoDePunto("Fin") && resultado.distanciaHacia(lugar) < mejor.ruta.getDistancia()){
+                mejor = new Evacuacion(lugar, resultado.rutaHacia(lugar));
+            }
+        }
+        return mejor;
+    }
+    
+    private String rutaComoTexto(Ruta ruta){
+        if(!ruta.existe()) return "Sin camino";
+        StringBuilder sb = new StringBuilder();
+        for (Lugar lugar : ruta.getLugares()) {
+            if(sb.length() > 0) sb.append(" → ");
+            sb.append(lugar.getNombre());
+        }
+        return sb.toString();
+    }
+    //EndRegion
+    
+    //#Region utilidades de interfaz
+    private boolean hayPlano(){
+        if(planoActual == null){
+            JOptionPane.showMessageDialog(this, "Primero cargue un plano (Archivo > Cargar Plano...)");
+            return false;
+        }
+        return true;
+    }
+    
+    private void avisar(String titulo, String mensaje){
+        JOptionPane.showMessageDialog(this, mensaje, titulo, JOptionPane.WARNING_MESSAGE);
+    }
+    
+    //tblTramos: los tramos bloqueados se ven en rojo
+    private class RenderTramos extends DefaultTableCellRenderer {
+        @Override
+        public Component getTableCellRendererComponent(JTable tabla, Object valor, boolean seleccionada,
+                boolean foco, int fila, int columna) {
+            Component c = super.getTableCellRendererComponent(tabla, valor, seleccionada, foco, fila, columna);
+            if(!seleccionada){
+                c.setForeground(tabla.getForeground());
+                if(fila < tramosMostrados.size() && !tramosMostrados.get(fila).isHabilitada()){
+                    c.setForeground(new Color(190, 0, 0));
+                }
+            }
+            return c;
+        }
+    }
+    
+    //tblAdyacencia y tblDistanciasFloyd: ids en negrita, sin conexión en gris y (en la matriz) bloqueados en rojo
+    private class RenderMatriz extends DefaultTableCellRenderer {
+        private final boolean marcarBloqueados;
+        RenderMatriz(boolean marcarBloqueados) {
+            this.marcarBloqueados = marcarBloqueados;
+            setHorizontalAlignment(SwingConstants.CENTER);
+        }
+        @Override
+        public Component getTableCellRendererComponent(JTable tabla, Object valor, boolean seleccionada,
+                boolean foco, int fila, int columna) {
+            Component c = super.getTableCellRendererComponent(tabla, valor, seleccionada, foco, fila, columna);
+            c.setFont(tabla.getFont().deriveFont(columna == 0 ? Font.BOLD : Font.PLAIN));
+            if(!seleccionada){
+                c.setBackground(tabla.getBackground());
+                c.setForeground(tabla.getForeground());
+                String texto = valor == null ? "" : valor.toString();
+                if(columna > 0 && (texto.equals("—") || texto.equals("∞"))){
+                    c.setForeground(Color.GRAY);
+                }
+                if(marcarBloqueados && columna > 0 && tramosMatriz != null && fila < tramosMatriz.length 
+                        && columna - 1 < tramosMatriz.length){
+                    Tramo t = tramosMatriz[fila][columna - 1];
+                    if(t != null && !t.isHabilitada()){
+                        c.setBackground(new Color(255, 205, 205));
+                        c.setForeground(new Color(160, 0, 0));
+                    }
+                }
+            }
+            return c;
+        }
     }
     //EndRegion
     
@@ -1668,15 +1946,15 @@ public class FormEvacuacion extends javax.swing.JFrame {
     private javax.swing.JButton btnGuardarSimulacion;
     private javax.swing.JButton btnModificarLugar;
     private javax.swing.JButton btnModificarTramo;
-    private javax.swing.JButton btnRefrescarTablaLugares;
     private javax.swing.JButton btnRegistrarLugar;
     private javax.swing.JButton btnRegistrarTramo;
     private javax.swing.JButton btnVerDetalle;
-    private javax.swing.JComboBox<Lugar> cbDestino;
-    private javax.swing.JComboBox<Lugar> cbFiltrarLugar;
+    private javax.swing.JButton btnVerReporteDetallado;
+    private javax.swing.JComboBox<String> cbDestino;
+    private javax.swing.JComboBox<String> cbFiltrarLugar;
     private javax.swing.JComboBox<String> cbFiltrarTipoLugar;
-    private javax.swing.JComboBox<Lugar> cbOrigen;
-    private javax.swing.JComboBox<Lugar> cbSalonOrigen;
+    private javax.swing.JComboBox<String> cbOrigen;
+    private javax.swing.JComboBox<String> cbSalonOrigen;
     private javax.swing.JComboBox<String> cbTipoLugar;
     private javax.swing.JFileChooser fcAgregarPlano;
     private javax.swing.JLabel jLabel1;
@@ -1729,11 +2007,12 @@ public class FormEvacuacion extends javax.swing.JFrame {
     private javax.swing.JTabbedPane jTabbedPane1;
     private javax.swing.JLabel lblDistanciaTotal;
     private javax.swing.JLabel lblSalidaCercana;
-    private javax.swing.JList<Tramo> listaTramos;
+    private javax.swing.JList<String> listaTramos;
     private javax.swing.JMenuItem miCargarPlano;
     private javax.swing.JMenuItem miGuardarPlano;
     private javax.swing.JPanel pna;
     private javax.swing.JTable tblAdyacencia;
+    private javax.swing.JTable tblDetalleEvacuacion;
     private javax.swing.JTable tblDistanciasFloyd;
     private javax.swing.JTable tblLugares;
     private javax.swing.JTable tblPlanEvacuacion;
@@ -1741,7 +2020,6 @@ public class FormEvacuacion extends javax.swing.JFrame {
     private javax.swing.JTable tblTramos;
     private javax.swing.JTextField txtBuscarNombreOIdLugar;
     private javax.swing.JTextField txtDesdeDistancia;
-    private javax.swing.JTextArea txtDetalleEvacuación;
     private javax.swing.JTextField txtDistancia;
     private javax.swing.JTextField txtHastaDistancia;
     private javax.swing.JTextField txtIdLugar;

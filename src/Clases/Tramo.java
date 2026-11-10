@@ -46,7 +46,7 @@ public class Tramo implements Serializable{
     }
     
     public Lugar otroExtremo(Lugar desde){
-        return desde == origen ? desde : origen;
+        return desde == origen ? destino : origen;
     }
     
     //getters y setters
@@ -65,8 +65,8 @@ public class Tramo implements Serializable{
 
     public void setDistancia(double distancia) {
         //se valida que la distancia sea mayor que cero
-        if(distancia < 1)
-            throw new IllegalArgumentException("La distancia no puede ser menor o igual a cero");
+        if(Double.isNaN(distancia) || Double.isInfinite(distancia) || distancia <= 0)
+            throw new IllegalArgumentException("La distancia debe ser un número mayor que cero");
         
         this.distancia = distancia;
     }

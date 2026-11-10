@@ -33,10 +33,6 @@ public abstract class Lugar implements Serializable{
         return tipoDePunto().equalsIgnoreCase(tipo); 
     }
     
-    public boolean esTipoDeLugar(String tipo){
-        return tipoLugar().equalsIgnoreCase(tipo);
-    }
-    
     public String lineaArchivo(){
         return ("LUGAR;"+idLugar+";"+nombre+";"+tipoLugar());
     }

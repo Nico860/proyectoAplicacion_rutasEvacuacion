@@ -52,6 +52,6 @@ public class Ruta implements Serializable{
             }
             sb.append(n.getNombre());
         }
-        return sb.append(String.format(" (%.1f km)", distancia)).toString();
+        return sb.append(String.format(" (%.1f m)", distancia)).toString();
     }    
 }

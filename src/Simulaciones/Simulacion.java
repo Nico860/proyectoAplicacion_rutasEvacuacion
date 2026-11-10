@@ -62,8 +62,9 @@ public class Simulacion implements Reportable, Serializable{
         sb.append("---------------------------------------------------------");
         sb.append("Distancia de evacuación entre cada salón: ");
         for (int i = 0; i < salones.size(); i++) {
-            sb.append(salones.get(i).toString() + " -> " + salidas.get(i).toString() + " - distancia" + 
-                    String.format(" (%.1f m)", metros.get(i)));
+            String salida = salidas.get(i) == null ? "Sin salida alcanzable" : salidas.get(i).toString();
+            String distancia = Double.isInfinite(metros.get(i)) ? " (sin camino)" : String.format(" (%.1f m)", metros.get(i));
+            sb.append(salones.get(i).toString() + " -> " + salida + " - distancia" + distancia);
         }
         
         return sb.toString();
