@@ -54,6 +54,9 @@ public class FormEvacuacion extends javax.swing.JFrame {
      */
     public FormEvacuacion() {
         initComponents();
+        //se carga la simulación al iniciar
+        cargarHistorial();
+        txtDetalleEvacuación.setEditable(false);
     }
 
     /**
@@ -141,15 +144,14 @@ public class FormEvacuacion extends javax.swing.JFrame {
         tblAdyacencia = new javax.swing.JTable();
         jPanel7 = new javax.swing.JPanel();
         jPanel16 = new javax.swing.JPanel();
-        jScrollPane7 = new javax.swing.JScrollPane();
-        tblDetalleEvacuacion = new javax.swing.JTable();
         jLabel23 = new javax.swing.JLabel();
+        jScrollPane7 = new javax.swing.JScrollPane();
+        txtDetalleEvacuación = new javax.swing.JTextArea();
         jPanel17 = new javax.swing.JPanel();
         jScrollPane8 = new javax.swing.JScrollPane();
         tblSimulaciones = new javax.swing.JTable();
         jLabel24 = new javax.swing.JLabel();
         btnVerDetalle = new javax.swing.JButton();
-        btnVerReporteDetallado = new javax.swing.JButton();
         jMenuBar1 = new javax.swing.JMenuBar();
         jMenu1 = new javax.swing.JMenu();
         miCargarPlano = new javax.swing.JMenuItem();
@@ -977,34 +979,14 @@ public class FormEvacuacion extends javax.swing.JFrame {
         jPanel16.setBackground(new java.awt.Color(0, 48, 135));
         jPanel16.setBorder(javax.swing.BorderFactory.createLineBorder(new java.awt.Color(242, 242, 242)));
 
-        tblDetalleEvacuacion.setFont(new java.awt.Font("Bahnschrift", 0, 14)); // NOI18N
-        tblDetalleEvacuacion.setForeground(new java.awt.Color(108, 108, 108));
-        tblDetalleEvacuacion.setModel(new javax.swing.table.DefaultTableModel(
-            new Object [][] {
-                {null, null, null, null, null},
-                {null, null, null, null, null},
-                {null, null, null, null, null},
-                {null, null, null, null, null}
-            },
-            new String [] {
-                "TRAMOS BLOQUEADOS", "SALÓN", "SALIDA ASIGNADA", "RUTA", "METROS"
-            }
-        ) {
-            Class[] types = new Class [] {
-                java.lang.String.class, java.lang.String.class, java.lang.String.class, java.lang.String.class, java.lang.Double.class
-            };
-
-            public Class getColumnClass(int columnIndex) {
-                return types [columnIndex];
-            }
-        });
-        tblDetalleEvacuacion.setSelectionBackground(new java.awt.Color(0, 112, 204));
-        tblDetalleEvacuacion.setSelectionForeground(new java.awt.Color(255, 255, 255));
-        jScrollPane7.setViewportView(tblDetalleEvacuacion);
-
         jLabel23.setFont(new java.awt.Font("Bahnschrift", 0, 18)); // NOI18N
         jLabel23.setForeground(new java.awt.Color(255, 255, 255));
         jLabel23.setText("Detalle de Simulación");
+
+        txtDetalleEvacuación.setColumns(20);
+        txtDetalleEvacuación.setFont(new java.awt.Font("Segoe UI", 0, 14)); // NOI18N
+        txtDetalleEvacuación.setRows(5);
+        jScrollPane7.setViewportView(txtDetalleEvacuación);
 
         javax.swing.GroupLayout jPanel16Layout = new javax.swing.GroupLayout(jPanel16);
         jPanel16.setLayout(jPanel16Layout);
@@ -1014,7 +996,7 @@ public class FormEvacuacion extends javax.swing.JFrame {
                 .addGap(28, 28, 28)
                 .addGroup(jPanel16Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
                     .addComponent(jLabel23)
-                    .addComponent(jScrollPane7, javax.swing.GroupLayout.PREFERRED_SIZE, 1038, javax.swing.GroupLayout.PREFERRED_SIZE))
+                    .addComponent(jScrollPane7, javax.swing.GroupLayout.PREFERRED_SIZE, 1020, javax.swing.GroupLayout.PREFERRED_SIZE))
                 .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
         );
         jPanel16Layout.setVerticalGroup(
@@ -1022,9 +1004,9 @@ public class FormEvacuacion extends javax.swing.JFrame {
             .addGroup(jPanel16Layout.createSequentialGroup()
                 .addContainerGap(20, Short.MAX_VALUE)
                 .addComponent(jLabel23)
-                .addGap(18, 18, 18)
-                .addComponent(jScrollPane7, javax.swing.GroupLayout.PREFERRED_SIZE, 215, javax.swing.GroupLayout.PREFERRED_SIZE)
-                .addGap(21, 21, 21))
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                .addComponent(jScrollPane7, javax.swing.GroupLayout.PREFERRED_SIZE, 242, javax.swing.GroupLayout.PREFERRED_SIZE)
+                .addContainerGap())
         );
 
         jPanel17.setBackground(new java.awt.Color(0, 48, 135));
@@ -1062,11 +1044,7 @@ public class FormEvacuacion extends javax.swing.JFrame {
         btnVerDetalle.setFont(new java.awt.Font("Bahnschrift", 0, 14)); // NOI18N
         btnVerDetalle.setForeground(new java.awt.Color(108, 108, 108));
         btnVerDetalle.setText("Ver Detalle");
-
-        btnVerReporteDetallado.setBackground(new java.awt.Color(0, 112, 204));
-        btnVerReporteDetallado.setFont(new java.awt.Font("Bahnschrift", 0, 14)); // NOI18N
-        btnVerReporteDetallado.setForeground(new java.awt.Color(255, 255, 255));
-        btnVerReporteDetallado.setText("Ver Reporte Detallado");
+        btnVerDetalle.addActionListener(this::btnVerDetalleActionPerformed);
 
         javax.swing.GroupLayout jPanel17Layout = new javax.swing.GroupLayout(jPanel17);
         jPanel17.setLayout(jPanel17Layout);
@@ -1079,9 +1057,7 @@ public class FormEvacuacion extends javax.swing.JFrame {
                     .addGroup(jPanel17Layout.createSequentialGroup()
                         .addComponent(jScrollPane8, javax.swing.GroupLayout.PREFERRED_SIZE, 552, javax.swing.GroupLayout.PREFERRED_SIZE)
                         .addGap(30, 30, 30)
-                        .addGroup(jPanel17Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                            .addComponent(btnVerDetalle, javax.swing.GroupLayout.DEFAULT_SIZE, 266, Short.MAX_VALUE)
-                            .addComponent(btnVerReporteDetallado, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))))
+                        .addComponent(btnVerDetalle, javax.swing.GroupLayout.DEFAULT_SIZE, 266, Short.MAX_VALUE)))
                 .addGap(206, 206, 206))
         );
         jPanel17Layout.setVerticalGroup(
@@ -1089,10 +1065,7 @@ public class FormEvacuacion extends javax.swing.JFrame {
             .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, jPanel17Layout.createSequentialGroup()
                 .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
                 .addGroup(jPanel17Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.TRAILING)
-                    .addGroup(jPanel17Layout.createSequentialGroup()
-                        .addComponent(btnVerReporteDetallado)
-                        .addGap(18, 18, 18)
-                        .addComponent(btnVerDetalle))
+                    .addComponent(btnVerDetalle)
                     .addGroup(jPanel17Layout.createSequentialGroup()
                         .addComponent(jLabel24)
                         .addGap(18, 18, 18)
@@ -1230,6 +1203,8 @@ public class FormEvacuacion extends javax.swing.JFrame {
             //se crea el objeto y se guarda la simulación
             simulaciones.add(new Simulacion(fh, tramosBloqueados, salones, salidas, rutas, distancias));
             guardarSimulacion();
+            //se refresca la tabla
+            refrescarTablaSimulaciones();
         } catch (Exception e) {
             JOptionPane.showMessageDialog(this, "Ocurrio un error al guardar la simulación");
         }  
@@ -1384,6 +1359,25 @@ public class FormEvacuacion extends javax.swing.JFrame {
         refrescarTablaLugares(planoActual.getLugares());
     }//GEN-LAST:event_btnRefrescarTablaLugaresActionPerformed
 
+    private void btnVerDetalleActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnVerDetalleActionPerformed
+        // TODO add your handling code here:
+        try {
+            int filaSeleccionada = tblSimulaciones.getSelectedRow();
+            //se valida que sea una fila valida
+            if(filaSeleccionada < 0){
+                JOptionPane.showMessageDialog(this, "Seleccione una simulación de la tabla");
+                return;
+            }
+            
+            //se extrae la simulación
+            Simulacion simulacion = simulaciones.get(filaSeleccionada);
+            //se muestra el detalle de la simulación
+            txtDetalleEvacuación.setText(simulacion.generarReporteDetallado());
+        } catch (Exception e) {
+            JOptionPane.showMessageDialog(this, "Ocurrio un error al cargar la simulación");
+        }
+    }//GEN-LAST:event_btnVerDetalleActionPerformed
+
     //###########################Regiones#########################################
     
     //#Region cargar y guardar archivos
@@ -1500,6 +1494,18 @@ public class FormEvacuacion extends javax.swing.JFrame {
                 tramo.getDistancia() //distancia
             });
         }        
+    }
+    private void refrescarTablaSimulaciones(){
+        //se obtiene el modelo
+        DefaultTableModel modelo = (DefaultTableModel) tblSimulaciones.getModel();
+        modelo.setRowCount(0);
+        //se recorre la lista y se agrega cada simulacion
+        for (Simulacion simulacion : simulaciones) {
+            modelo.addRow(new Object[]{
+                simulacion.getFechaYHora().toLocalDate(), //fecha
+                simulacion.getFechaYHora().toLocalTime() //hora
+            });
+        }
     }
     //EndRegion
     
@@ -1666,7 +1672,6 @@ public class FormEvacuacion extends javax.swing.JFrame {
     private javax.swing.JButton btnRegistrarLugar;
     private javax.swing.JButton btnRegistrarTramo;
     private javax.swing.JButton btnVerDetalle;
-    private javax.swing.JButton btnVerReporteDetallado;
     private javax.swing.JComboBox<Lugar> cbDestino;
     private javax.swing.JComboBox<Lugar> cbFiltrarLugar;
     private javax.swing.JComboBox<String> cbFiltrarTipoLugar;
@@ -1729,7 +1734,6 @@ public class FormEvacuacion extends javax.swing.JFrame {
     private javax.swing.JMenuItem miGuardarPlano;
     private javax.swing.JPanel pna;
     private javax.swing.JTable tblAdyacencia;
-    private javax.swing.JTable tblDetalleEvacuacion;
     private javax.swing.JTable tblDistanciasFloyd;
     private javax.swing.JTable tblLugares;
     private javax.swing.JTable tblPlanEvacuacion;
@@ -1737,6 +1741,7 @@ public class FormEvacuacion extends javax.swing.JFrame {
     private javax.swing.JTable tblTramos;
     private javax.swing.JTextField txtBuscarNombreOIdLugar;
     private javax.swing.JTextField txtDesdeDistancia;
+    private javax.swing.JTextArea txtDetalleEvacuación;
     private javax.swing.JTextField txtDistancia;
     private javax.swing.JTextField txtHastaDistancia;
     private javax.swing.JTextField txtIdLugar;
