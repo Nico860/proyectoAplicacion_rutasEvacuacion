@@ -26,6 +26,7 @@ import java.io.PrintWriter;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
+import javax.swing.DefaultComboBoxModel;
 import javax.swing.JFileChooser;
 import javax.swing.JOptionPane;
 import javax.swing.table.DefaultTableModel;
@@ -1190,6 +1191,7 @@ public class FormEvacuacion extends javax.swing.JFrame {
         //se guarda la ruta del archivo
         archivoPlano = archivo.getAbsolutePath();
         cargarPlano(archivo);
+        cargarComboBoxes();
     }//GEN-LAST:event_miCargarPlanoActionPerformed
 
     private void miGuardarPlanoActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_miGuardarPlanoActionPerformed
@@ -1269,6 +1271,7 @@ public class FormEvacuacion extends javax.swing.JFrame {
             limpiarCamposLugares();
             //se guarda el archivo
             guardarPlano();
+            cargarComboBoxes();
             //se refresca la tabla
             refrescarTablaLugares(planoActual.getLugares());
         } catch (Exception e) {
@@ -1336,6 +1339,7 @@ public class FormEvacuacion extends javax.swing.JFrame {
             
             //se guarda el plano
             guardarPlano();
+            cargarComboBoxes();
             //se refresca la vista
             refrescarTablaLugares(planoActual.getLugares());
             refrescarTablaTramos(planoActual.getTramos());
@@ -1366,6 +1370,7 @@ public class FormEvacuacion extends javax.swing.JFrame {
             limpiarCamposLugares();
             //se guarda el archivo
             guardarPlano();
+            cargarComboBoxes();
             //se refresca la tabla
             refrescarTablaLugares(planoActual.getLugares());
         } catch (Exception e) {
@@ -1568,6 +1573,27 @@ public class FormEvacuacion extends javax.swing.JFrame {
     }
     //EndRegion
     
+    //#Region cargar comboBoxes
+    private void cargarComboBoxes(){
+        cargarComboBoxesLugar();
+    }
+    private void cargarComboBoxesLugar(){
+        cbOrigen.removeAllItems();
+        cbDestino.removeAllItems();
+        cbFiltrarLugar.removeAllItems();
+        //se crean los modelos
+        DefaultComboBoxModel<Lugar> modelo = new DefaultComboBoxModel<>();
+        //se recorre la lista y se llenan
+        for (Lugar lugar : planoActual.getLugares()) {
+            modelo.addElement(lugar);
+        }
+        //se pasa el modelo a los comboBoxes originales
+        cbOrigen.setModel(modelo);
+        cbDestino.setModel(modelo);
+        cbFiltrarLugar.setModel(modelo);
+    }
+    //EndRegion
+    
     //############################################################################
     
     /**
@@ -1611,10 +1637,10 @@ public class FormEvacuacion extends javax.swing.JFrame {
     private javax.swing.JButton btnRegistrarTramo;
     private javax.swing.JButton btnVerDetalle;
     private javax.swing.JButton btnVerReporteDetallado;
-    private javax.swing.JComboBox<String> cbDestino;
-    private javax.swing.JComboBox<String> cbFiltrarLugar;
+    private javax.swing.JComboBox<Lugar> cbDestino;
+    private javax.swing.JComboBox<Lugar> cbFiltrarLugar;
     private javax.swing.JComboBox<String> cbFiltrarTipoLugar;
-    private javax.swing.JComboBox<String> cbOrigen;
+    private javax.swing.JComboBox<Lugar> cbOrigen;
     private javax.swing.JComboBox<String> cbSalonOrigen;
     private javax.swing.JComboBox<String> cbTipoLugar;
     private javax.swing.JFileChooser fcAgregarPlano;
