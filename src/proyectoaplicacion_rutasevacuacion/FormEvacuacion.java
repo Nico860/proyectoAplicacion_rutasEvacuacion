@@ -73,7 +73,6 @@ public class FormEvacuacion extends javax.swing.JFrame {
      */
     public FormEvacuacion() {
         initComponents();
-        configurarComponentes();
         //se carga la simulación al iniciar
         cargarHistorial();
         txtDetalleEvacuación.setEditable(false);
@@ -1416,7 +1415,7 @@ public class FormEvacuacion extends javax.swing.JFrame {
             JOptionPane.showMessageDialog(this, "Error: " + e.getMessage() + " -> linea: " + numeroL);
             return;
         }
-        
+        configurarComponentes();
         refrescarTablaLugares(planoActual.getLugares());
         refrescarTodo();
     }
@@ -1575,7 +1574,6 @@ public class FormEvacuacion extends javax.swing.JFrame {
         txtDistancia.setText("");
     }
     //EndRegion
-    
     //#Region cargar comboBoxes
     private void cargarComboBoxes(){
         cargarComboBoxesLugar();
@@ -1648,7 +1646,7 @@ public class FormEvacuacion extends javax.swing.JFrame {
         tblDistanciasFloyd.setDefaultRenderer(Object.class, new RenderMatriz(false));
         
         //lista de tramos del panel de rutas (se bloquean / desbloquean desde aquí)
-        listaTramos.setModel(new DefaultListModel<String>());
+        listaTramos.setModel(new DefaultListModel<Tramo>());
         listaTramos.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
         
         jLabel15.setText("Matriz de Adyacencia del Plano   ( — = sin conexión · fondo rojo = tramo bloqueado )");
@@ -1656,7 +1654,7 @@ public class FormEvacuacion extends javax.swing.JFrame {
         lblDistanciaTotal.setText("—");
         
         //los combos siempre tienen un primer elemento "seleccione" para que limpiarCamposTramos() funcione
-        refrescarCombosLugares();
+        cargarComboBoxes();
         
         //botones
         //btnRegistrarTramo y btnEliminarTramo se conectan desde el editor de formularios (ver sus ...ActionPerformed)
@@ -1682,61 +1680,12 @@ public class FormEvacuacion extends javax.swing.JFrame {
     //#Region refrescar toda la vista a partir del plano actual
     //Se llama cada vez que cambia el plano: cargar, registrar/modificar/eliminar tramos, bloquear/desbloquear.
     private void refrescarTodo(){
-        refrescarCombosLugares();
+        cargarComboBoxes();
         refrescarTablaTramos(planoActual.getTramos());
-        refrescarListaTramos();
         refrescarMatrizAdyacencia();
         recalcularPlanGeneral();
         recalcularFloyd();
         mostrarRutaIndividual();
-    }
-    
-    private void refrescarCombosLugares(){
-        //se recuerda el salón seleccionado para no perderlo al refrescar
-        String idSalon = null;
-        int sel = cbSalonOrigen.getSelectedIndex();
-        if(sel > 0 && sel <= salonesCombo.size()) idSalon = salonesCombo.get(sel - 1).getIdLugar();
-        
-        DefaultComboBoxModel<String> origen = new DefaultComboBoxModel<>();
-        DefaultComboBoxModel<String> destino = new DefaultComboBoxModel<>();
-        DefaultComboBoxModel<String> filtro = new DefaultComboBoxModel<>();
-        DefaultComboBoxModel<String> salones = new DefaultComboBoxModel<>();
-        origen.addElement("--Seleccione un lugar--");
-        destino.addElement("--Seleccione un lugar--");
-        filtro.addElement("--Seleccione un lugar--");
-        salones.addElement("--Seleccione un salón--");
-        salonesCombo = new ArrayList<>();
-        
-        if(planoActual != null){
-            //el elemento i + 1 del combo corresponde al lugar i del plano
-            for (Lugar lugar : planoActual.getLugares()) {
-                origen.addElement(lugar.toString());
-                destino.addElement(lugar.toString());
-                filtro.addElement(lugar.toString());
-                if(lugar.esTipoDePunto("Inicio")){
-                    salonesCombo.add(lugar);
-                    salones.addElement(lugar.toString());
-                }
-            }
-        }
-        
-        actualizandoUI = true;
-        cbOrigen.setModel(origen);
-        cbDestino.setModel(destino);
-        cbFiltrarLugar.setModel(filtro);
-        cbSalonOrigen.setModel(salones);
-        for (int i = 0; i < salonesCombo.size(); i++) {
-            if(salonesCombo.get(i).getIdLugar().equals(idSalon)) cbSalonOrigen.setSelectedIndex(i + 1);
-        }
-        actualizandoUI = false;
-    }
-    
-    private void refrescarListaTramos(){
-        DefaultListModel<String> modelo = new DefaultListModel<>();
-        for (Tramo tramo : planoActual.getTramos()) {
-            modelo.addElement(tramo.toString()); //los bloqueados muestran [CERRADA]
-        }
-        listaTramos.setModel(modelo);
     }
     //EndRegion
     
@@ -1838,7 +1787,7 @@ public class FormEvacuacion extends javax.swing.JFrame {
         return tramosMostrados.get(fila);
     }
     
-    private Lugar lugarDelCombo(JComboBox<String> combo, String etiqueta){
+    private Lugar lugarDelCombo(JComboBox<Lugar> combo, String etiqueta){
         int i = combo.getSelectedIndex();
         if(i <= 0 || i > planoActual.cantidadLugares()){
             throw new IllegalArgumentException("Seleccione el lugar de " + etiqueta);
@@ -2195,7 +2144,7 @@ public class FormEvacuacion extends javax.swing.JFrame {
     private javax.swing.JTabbedPane jTabbedPane1;
     private javax.swing.JLabel lblDistanciaTotal;
     private javax.swing.JLabel lblSalidaCercana;
-    private javax.swing.JList<Lugar> listaTramos;
+    private javax.swing.JList<Tramo> listaTramos;
     private javax.swing.JMenuItem miCargarPlano;
     private javax.swing.JMenuItem miGuardarPlano;
     private javax.swing.JPanel pna;
